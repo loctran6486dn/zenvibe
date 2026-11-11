@@ -44,6 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('touchstart', unlockMobileAudio, { passive: true, once: true });
   document.addEventListener('click', unlockMobileAudio, { passive: true, once: true });
 
+  // Tự động khôi phục AudioContext khi người dùng quay lại tab/ứng dụng trên điện thoại
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && engine.audioCtx && engine.audioCtx.state === 'suspended') {
+      engine.audioCtx.resume();
+    }
+  });
+
   // ==========================================
   // 1. RENDER CATEGORIES & SOUND CARDS
   // ==========================================
@@ -284,8 +291,55 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 3. MASTER CONTROL BAR
+  // 3. MASTER CONTROL BAR & MEDIA SESSION (LOCK SCREEN / CONTROL CENTER)
   // ==========================================
+
+  function updateMediaSession(activeCount) {
+    if ('mediaSession' in navigator) {
+      if (activeCount > 0) {
+        const activeNames = [];
+        for (const [id, channel] of engine.channels.entries()) {
+          if (channel.isPlaying) {
+            const item = SOUND_ITEMS.find(s => s.id === id);
+            if (item) activeNames.push(item.name);
+          }
+        }
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: 'ZenVibe - Relaxing Sounds',
+          artist: activeNames.slice(0, 3).join(' • ') + (activeNames.length > 3 ? ` (+${activeNames.length - 3})` : ''),
+          album: 'Âm thanh thư giãn & tĩnh tâm',
+          artwork: [
+            { src: 'assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+          ]
+        });
+        navigator.mediaSession.playbackState = 'playing';
+      } else {
+        navigator.mediaSession.playbackState = 'paused';
+      }
+    }
+  }
+
+  // MediaSession Action Handlers cho phím tai nghe & màn hình khóa
+  if ('mediaSession' in navigator) {
+    try {
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (isMasterPaused || engine.getActiveCount() === 0) {
+          btnMasterPlay.click();
+        }
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (!isMasterPaused && engine.getActiveCount() > 0) {
+          btnMasterPlay.click();
+        }
+      });
+      navigator.mediaSession.setActionHandler('stop', () => {
+        btnResetAll.click();
+      });
+    } catch (e) {
+      console.warn('MediaSession handler error:', e);
+    }
+  }
 
   function updateMasterStatus() {
     const activeCount = engine.getActiveCount();
@@ -301,6 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
       masterStatusText.innerHTML = 'Chưa có âm thanh nào bật';
       masterSubText.textContent = 'Chọn âm thanh hoặc chọn Preset để bắt đầu thư giãn';
     }
+
+    updateMediaSession(activeCount);
   }
 
   // Play / Pause Master Button
