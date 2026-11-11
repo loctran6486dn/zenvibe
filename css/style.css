@@ -464,9 +464,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
-  color: #111;
   transition: var(--transition);
+}
+
+.tile-icon-box svg {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .tile-icon-box.yellow { background: var(--accent-gold); box-shadow: 0 4px 14px rgba(251, 191, 36, 0.3); }
@@ -626,7 +630,6 @@ body {
 }
 
 .card-icon {
-  font-size: 1.5rem;
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.05);
@@ -636,6 +639,20 @@ body {
   align-items: center;
   justify-content: center;
   transition: var(--transition);
+}
+
+.card-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.sound-card.active .card-icon svg {
+  color: var(--primary-light);
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+  transform: scale(1.06);
 }
 
 .sound-card.active .card-icon {
@@ -684,10 +701,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
   cursor: pointer;
   transition: var(--transition);
   flex-shrink: 0;
+}
+
+.toggle-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .toggle-btn:hover {
@@ -717,8 +739,16 @@ body {
 }
 
 .vol-icon {
-  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
+}
+
+.vol-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .custom-slider {
@@ -803,8 +833,18 @@ body {
 }
 
 .dock-item .dock-icon {
-  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   transition: transform 0.2s ease;
+}
+
+.dock-item .dock-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 .dock-item:hover, .dock-item.active {
@@ -814,6 +854,10 @@ body {
 .dock-item.active .dock-icon {
   transform: translateY(-2px);
   color: var(--primary);
+}
+
+.dock-item.active .dock-icon svg {
+  filter: drop-shadow(0 0 6px var(--primary-glow));
 }
 
 /* Center Elevated FAB (The Purple Plus Button from Screenshots!) */
@@ -829,13 +873,18 @@ body {
   background: var(--primary);
   border: 3px solid #141322;
   color: #FFFFFF;
-  font-size: 1.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 8px 24px var(--primary-glow);
   transition: var(--transition);
+}
+
+.btn-center-fab svg {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .btn-center-fab:hover {
@@ -951,20 +1000,40 @@ body {
   background: var(--primary);
   border: none;
   color: #FFFFFF;
-  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 14px var(--primary-glow);
   flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.btn-master-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .btn-icon-mute {
   background: transparent;
   border: none;
-  font-size: 1.3rem;
+  color: var(--text-muted);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-icon-mute:hover {
+  color: #FFFFFF;
+}
+
+.btn-icon-mute svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 /* Drawer Action Cards 2-col Grid (Matching Image 2) */
@@ -982,7 +1051,7 @@ body {
   padding: 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   transition: var(--transition);
 }
@@ -993,7 +1062,20 @@ body {
 }
 
 .drawer-card-icon {
-  font-size: 1.35rem;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.drawer-card-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .drawer-card-label {

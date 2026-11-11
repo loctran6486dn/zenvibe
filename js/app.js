@@ -105,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
     SOUND_CATEGORIES.forEach(cat => {
       const btn = document.createElement('button');
       btn.className = `cat-tab ${cat.id === currentCategory ? 'active' : ''}`;
-      btn.innerHTML = `<span>${cat.icon}</span> <span>${cat.name}</span>`;
+      const iconSvg = typeof ZenIcons !== 'undefined' ? ZenIcons.forCategory(cat.id, { size: 17 }) : cat.icon;
+      btn.innerHTML = `${iconSvg} <span>${cat.name}</span>`;
       btn.addEventListener('click', () => {
         currentCategory = cat.id;
         document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
@@ -130,22 +131,32 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = `sound-card ${isPlaying ? 'active' : ''}`;
       card.id = `card-${sound.id}`;
 
+      const soundSvg = typeof ZenIcons !== 'undefined' 
+        ? ZenIcons.forSound(sound.id, { size: 22 }) 
+        : sound.icon;
+      const toggleSvg = typeof ZenIcons !== 'undefined'
+        ? (isPlaying ? ZenIcons.get('pause', { size: 14 }) : ZenIcons.get('play', { size: 14 }))
+        : (isPlaying ? '⏸' : '▶');
+      const volSvg = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.get('volume_up', { size: 15 })
+        : '🔉';
+
       card.innerHTML = `
         <div class="card-top" data-sound-id="${sound.id}">
           <div class="card-info">
-            <div class="card-icon">${sound.icon}</div>
+            <div class="card-icon">${soundSvg}</div>
             <div class="card-text">
               <div class="card-name">${sound.name}</div>
               <span class="card-tag">${sound.tag}</span>
             </div>
           </div>
           <button class="toggle-btn" aria-label="Bật tắt ${sound.name}">
-            <i class="icon-toggle">${isPlaying ? '⏸' : '▶'}</i>
+            <i class="icon-toggle">${toggleSvg}</i>
           </button>
         </div>
         <p class="card-desc" data-sound-id="${sound.id}">${sound.description}</p>
         <div class="volume-control-wrap">
-          <span class="vol-icon">🔉</span>
+          <span class="vol-icon">${volSvg}</span>
           <input type="range" class="custom-slider vol-slider" 
                  min="0" max="100" value="${channel.volume}" 
                  data-sound-id="${sound.id}"
@@ -202,7 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleIcon = card.querySelector('.icon-toggle');
     if (toggleIcon) {
-      toggleIcon.textContent = isPlaying ? '⏸' : '▶';
+      toggleIcon.innerHTML = typeof ZenIcons !== 'undefined'
+        ? (isPlaying ? ZenIcons.get('pause', { size: 14 }) : ZenIcons.get('play', { size: 14 }))
+        : (isPlaying ? '⏸' : '▶');
     }
   }
 
@@ -217,7 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
     DEFAULT_PRESETS.slice(0, 5).forEach(preset => {
       const chip = document.createElement('button');
       chip.className = 'preset-chip';
-      chip.innerHTML = `<span>${preset.icon}</span> <span>${preset.name}</span>`;
+      const pSvg = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.forPreset(preset.id, { size: 16 })
+        : preset.icon;
+      chip.innerHTML = `${pSvg} <span>${preset.name}</span>`;
       chip.addEventListener('click', () => {
         presetManager.applyPreset(preset);
         showToast(`Đã áp dụng: ${preset.name}`);
@@ -230,7 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const chip = document.createElement('button');
       chip.className = 'preset-chip';
       chip.style.borderColor = 'rgba(163, 113, 247, 0.4)';
-      chip.innerHTML = `<span>${preset.icon}</span> <span>${preset.name}</span>`;
+      const starSvg = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.get('save', { size: 16, color: '#A371F7' })
+        : '💾';
+      chip.innerHTML = `${starSvg} <span>${preset.name}</span>`;
       chip.addEventListener('click', () => {
         presetManager.applyPreset(preset);
         showToast(`Đã áp dụng: ${preset.name}`);
@@ -248,9 +267,12 @@ document.addEventListener('DOMContentLoaded', () => {
     DEFAULT_PRESETS.forEach(preset => {
       const item = document.createElement('div');
       item.className = 'preset-card-item';
+      const pSvg = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.forPreset(preset.id, { size: 22, color: '#A371F7' })
+        : preset.icon;
       item.innerHTML = `
         <div class="preset-card-left">
-          <span class="preset-card-icon">${preset.icon}</span>
+          <span class="preset-card-icon">${pSvg}</span>
           <div>
             <div class="preset-card-name">${preset.name}</div>
             <div class="preset-card-sub">${preset.subtitle}</div>
@@ -274,9 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
       presetManager.customPresets.forEach(preset => {
         const item = document.createElement('div');
         item.className = 'preset-card-item';
+        const cSvg = typeof ZenIcons !== 'undefined'
+          ? ZenIcons.get('save', { size: 22, color: '#A371F7' })
+          : '💾';
         item.innerHTML = `
           <div class="preset-card-left">
-            <span class="preset-card-icon">${preset.icon}</span>
+            <span class="preset-card-icon">${cSvg}</span>
             <div>
               <div class="preset-card-name">${preset.name}</div>
               <div class="preset-card-sub">${preset.subtitle} • ${preset.createdAt}</div>
@@ -450,8 +475,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (activeCount > 0) {
       btnMasterPlay.classList.remove('paused');
-      btnMasterPlay.innerHTML = '⏸';
-      if (fabIcon) fabIcon.textContent = '⏸';
+      btnMasterPlay.innerHTML = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.get('pause', { size: 18 })
+        : '⏸';
+      if (fabIcon) {
+        fabIcon.innerHTML = typeof ZenIcons !== 'undefined'
+          ? ZenIcons.get('pause', { size: 24 })
+          : '⏸';
+      }
       if (btnCenterFab) btnCenterFab.classList.add('is-playing');
       if (masterStatusText) masterStatusText.innerHTML = `<span class="pulse-dot"></span> Đang phát ${activeCount} âm thanh`;
       if (masterSubText) masterSubText.textContent = 'Nhấn phím Space để tạm dừng / phát tiếp';
@@ -464,8 +495,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       btnMasterPlay.classList.add('paused');
-      btnMasterPlay.innerHTML = '▶';
-      if (fabIcon) fabIcon.textContent = '▶';
+      btnMasterPlay.innerHTML = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.get('play', { size: 18 })
+        : '▶';
+      if (fabIcon) {
+        fabIcon.innerHTML = typeof ZenIcons !== 'undefined'
+          ? ZenIcons.get('play', { size: 24 })
+          : '▶';
+      }
       if (btnCenterFab) btnCenterFab.classList.remove('is-playing');
       if (masterStatusText) masterStatusText.innerHTML = 'Chưa có âm thanh nào bật';
       if (masterSubText) masterSubText.textContent = 'Chọn âm thanh hoặc chọn Preset để bắt đầu thư giãn';
@@ -518,8 +555,14 @@ document.addEventListener('DOMContentLoaded', () => {
       engine.stopAll(0.3);
       isMasterPaused = true;
       btnMasterPlay.classList.add('paused');
-      btnMasterPlay.innerHTML = '▶';
-      if (fabIcon) fabIcon.textContent = '▶';
+      btnMasterPlay.innerHTML = typeof ZenIcons !== 'undefined'
+        ? ZenIcons.get('play', { size: 18 })
+        : '▶';
+      if (fabIcon) {
+        fabIcon.innerHTML = typeof ZenIcons !== 'undefined'
+          ? ZenIcons.get('play', { size: 24 })
+          : '▶';
+      }
       if (btnCenterFab) btnCenterFab.classList.remove('is-playing');
       if (masterStatusText) masterStatusText.innerHTML = 'Đã tạm dừng';
       if (masterSubText) masterSubText.textContent = 'Nhấn để tiếp tục nghe';
@@ -548,14 +591,18 @@ document.addEventListener('DOMContentLoaded', () => {
   masterVolSlider.addEventListener('input', (e) => {
     const val = parseFloat(e.target.value);
     engine.setMasterVolume(val);
-    btnMasterMute.innerHTML = val === 0 ? '🔇' : '🔊';
+    btnMasterMute.innerHTML = typeof ZenIcons !== 'undefined'
+      ? (val === 0 ? ZenIcons.get('volume_mute', { size: 20 }) : ZenIcons.get('volume_up', { size: 20 }))
+      : (val === 0 ? '🔇' : '🔊');
     if (heroStatVol) heroStatVol.textContent = `${Math.round(val * 100)}%`;
   });
 
   // Master Mute Button
   btnMasterMute.addEventListener('click', () => {
     const isMuted = engine.toggleMute();
-    btnMasterMute.innerHTML = isMuted ? '🔇' : '🔊';
+    btnMasterMute.innerHTML = typeof ZenIcons !== 'undefined'
+      ? (isMuted ? ZenIcons.get('volume_mute', { size: 20 }) : ZenIcons.get('volume_up', { size: 20 }))
+      : (isMuted ? '🔇' : '🔊');
     showToast(isMuted ? 'Đã tắt tiếng toàn bộ' : 'Đã bật lại âm thanh');
   });
 
