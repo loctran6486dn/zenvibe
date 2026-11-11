@@ -1,0 +1,6 @@
+.DS_Store
+*.wav
+*.pyc
+__pycache__/
+ZenVibe.app/
+screenshot.png

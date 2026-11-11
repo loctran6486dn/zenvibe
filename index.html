@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ZenVibe - Relaxing Ambient Sounds & Sound Mixer</title>
+  <meta name="description" content="Ứng dụng âm thanh thư giãn cao cấp: tiếng mưa, suối chảy, chim hót, gió thổi lá bay, cỏ lắc lư, quán cà phê, văn phòng và phòng ngủ.">
+  <meta name="theme-color" content="#0d1117">
+  
+  <!-- Apple iOS Mobile & PWA Web App Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZenVibe">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="assets/icons/icon-512.png">
+  
+  <!-- Web App Manifest for Android / Chrome PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>🍃</text></svg>">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Canvas nền hiệu ứng lá bay & đom đóm êm đềm -->
+  <canvas id="ambientCanvas"></canvas>
+
+  <!-- Container chính -->
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-logo">🍃</div>
+        <div>
+          <h1 class="brand-title">ZenVibe</h1>
+          <p class="brand-subtitle">Âm thanh thiên nhiên & Không gian thư giãn tâm trí</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-header" id="btnOpenPresets" title="Xem tất cả các bộ phối âm sẵn">
+          <span>✨</span>
+          <span>Không gian (Presets)</span>
+        </button>
+        <button class="btn-header" id="btnSaveMix" title="Lưu phối âm hiện tại">
+          <span>💾</span>
+          <span>Lưu phối âm</span>
+        </button>
+        <button class="btn-header primary" id="btnOpenTimer" title="Hẹn giờ tắt hoặc bật Pomodoro">
+          <span>⏱️</span>
+          <span>Hẹn giờ</span>
+          <span id="timerBadge" style="display:none; padding:2px 8px; border-radius:12px; background:#0284c7; font-size:0.75rem; font-weight:bold;"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dải Presets chọn nhanh (Quick Preset Strip) -->
+    <section class="presets-strip">
+      <div class="preset-strip-title">
+        <span>⚡</span> Gợi ý nhanh:
+      </div>
+      <div class="preset-chips-wrapper" id="presetChips">
+        <!-- Render động từ JS -->
+      </div>
+    </section>
+
+    <!-- Danh mục phân loại (Category Tabs) -->
+    <nav class="category-nav" id="categoryNav">
+      <!-- Render động từ JS -->
+    </nav>
+
+    <!-- Lưới hiển thị các thẻ âm thanh (Sound Grid) -->
+    <main>
+      <div class="sound-grid" id="soundGrid">
+        <!-- Render động từng card âm thanh từ JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================
+       Master Control Bar (Thanh điều khiển cố định chân trang)
+       ========================================== -->
+  <footer class="master-bar">
+    <div class="master-inner">
+      <!-- Cụm bên trái: Play/Pause tổng & Trạng thái -->
+      <div class="master-left">
+        <button class="btn-master-play paused" id="btnMasterPlay" title="Tạm dừng / Tiếp tục tất cả (Space)">
+          ▶
+        </button>
+        <div class="master-track-info">
+          <div class="master-track-status" id="masterStatusText">Chưa có âm thanh nào bật</div>
+          <div class="master-track-sub" id="masterSubText">Chọn âm thanh để bắt đầu thư giãn</div>
+        </div>
+      </div>
+
+      <!-- Cụm ở giữa: Âm lượng Master tổng & Mute -->
+      <div class="master-center">
+        <button class="btn-icon-mute" id="btnMasterMute" title="Tắt / Bật tiếng nhanh (Phím M)">
+          🔊
+        </button>
+        <input type="range" class="custom-slider" id="masterVolSlider" 
+               min="0" max="1" step="0.01" value="0.8" 
+               aria-label="Âm lượng tổng">
+      </div>
+
+      <!-- Cụm bên phải: Thao tác bổ trợ -->
+      <div class="master-right">
+        <button class="pill-btn danger" id="btnResetAll" title="Tắt toàn bộ âm thanh">
+          <span>⏹️</span>
+          <span>Tắt tất cả</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       Modal 1: Hẹn Giờ Ngủ & Pomodoro
+       ========================================== -->
+  <div class="modal-overlay" id="timerModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">⏱️ Hẹn Giờ Thông Minh</h2>
+        <button class="modal-close" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="timer-modes">
+        <button class="timer-mode-btn active" id="tabSleepTimer">💤 Hẹn Giờ Ngủ</button>
+        <button class="timer-mode-btn" id="tabPomodoro">🎯 Pomodoro Tập Trung</button>
+      </div>
+
+      <!-- Đồng hồ đếm ngược -->
+      <div class="timer-display-box">
+        <div class="timer-clock" id="timerClock">00:00</div>
+        <div class="timer-status-hint" id="timerStatusHint">Hẹn giờ đang tắt</div>
+      </div>
+
+      <!-- Lựa chọn nhanh cho Hẹn Giờ Ngủ -->
+      <div class="timer-quick-grid" id="sleepTimerGrid">
+        <button class="timer-btn btn-sleep-val" data-mins="15">15 phút</button>
+        <button class="timer-btn btn-sleep-val" data-mins="30">30 phút</button>
+        <button class="timer-btn btn-sleep-val" data-mins="45">45 phút</button>
+        <button class="timer-btn btn-sleep-val" data-mins="60">1 giờ</button>
+        <button class="timer-btn btn-sleep-val" data-mins="90">1.5 giờ</button>
+        <button class="timer-btn btn-sleep-val" data-mins="120">2 giờ</button>
+      </div>
+
+      <!-- Lựa chọn nhanh cho Pomodoro -->
+      <div class="timer-quick-grid" id="pomodoroGrid" style="display:none;">
+        <button class="timer-btn btn-pomo-val" data-mins="20">20 phút</button>
+        <button class="timer-btn btn-pomo-val" data-mins="25">25 phút</button>
+        <button class="timer-btn btn-pomo-val" data-mins="30">30 phút</button>
+        <button class="timer-btn btn-pomo-val" data-mins="45">45 phút</button>
+        <button class="timer-btn btn-pomo-val" data-mins="50">50 phút</button>
+        <button class="timer-btn btn-pomo-val" data-mins="60">60 phút</button>
+      </div>
+
+      <div class="timer-actions">
+        <button class="btn-block btn-secondary" id="btnStopTimer">Dừng hẹn giờ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       Modal 2: Danh Sách Presets & Không Gian
+       ========================================== -->
+  <div class="modal-overlay" id="presetsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">✨ Không Gian & Presets</h2>
+        <button class="modal-close" aria-label="Đóng">&times;</button>
+      </div>
+
+      <h3 style="font-size:0.95rem; color:var(--accent-warm); margin-bottom:12px;">Gợi ý không gian chuẩn:</h3>
+      <div class="presets-list" id="defaultPresetsList">
+        <!-- Render từ presets.js -->
+      </div>
+
+      <h3 style="font-size:0.95rem; color:var(--accent); margin:20px 0 12px 0;">Phối âm của bạn:</h3>
+      <div class="presets-list" id="customPresetsList">
+        <!-- Render từ presets.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       Modal 3: Lưu Phối Âm Cá Nhân
+       ========================================== -->
+  <div class="modal-overlay" id="saveMixModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">💾 Lưu Phối Âm Yêu Thích</h2>
+        <button class="modal-close" aria-label="Đóng">&times;</button>
+      </div>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">
+        Lưu lại cấu hình âm thanh và mức âm lượng hiện tại để nghe lại bất cứ lúc nào:
+      </p>
+      <input type="text" id="mixNameInput" 
+             placeholder="Ví dụ: Đọc sách chiều mưa, Tập trung deadline..."
+             style="width:100%; padding:12px 16px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border); border-radius:var(--radius-md); color:#fff; font-size:0.95rem; outline:none; margin-bottom:20px;">
+      <div class="timer-actions">
+        <button class="btn-block btn-primary" id="btnConfirmSaveMix">Lưu vào máy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thông báo Toast -->
+  <div class="toast-notice" id="toastNotice">
+    <span>💡</span>
+    <span class="toast-msg">Đã cập nhật trạng thái</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio-data.js"></script>
+  <script src="js/audio-engine.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
