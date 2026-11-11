@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ZenVibe - Relaxing Ambient Sounds & Sound Mixer</title>
-  <meta name="description" content="Ứng dụng âm thanh thư giãn cao cấp: tiếng mưa, suối chảy, chim hót, gió thổi lá bay, cỏ lắc lư, quán cà phê, văn phòng và phòng ngủ.">
-  <meta name="theme-color" content="#0d1117">
+  <title>ZenVibe - Relaxing Ambient Sounds</title>
+  <meta name="description" content="ZenVibe - Ứng dụng âm thanh thư giãn cao cấp: tiếng mưa, suối chảy, chim hót, gió lá, quán cà phê và giấc ngủ sâu.">
+  <meta name="theme-color" content="#141322">
   
-  <!-- Apple iOS Mobile & PWA Web App Support -->
+  <!-- Apple iOS Mobile & PWA Support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ZenVibe">
@@ -32,96 +32,260 @@
          webkit-playsinline 
          style="display:none;"></audio>
 
-  <!-- Canvas nền hiệu ứng lá bay & đom đóm êm đềm -->
+  <!-- Canvas nền hiệu ứng đom đóm & bụi sao thư giãn -->
   <canvas id="ambientCanvas"></canvas>
 
   <!-- Container chính -->
   <div class="container">
-    <!-- Header -->
+    <!-- 1. Header Bar & Badges (Hình mẫu 1 & 3) -->
     <header class="app-header">
       <div class="brand-wrapper">
         <div class="brand-logo">🍃</div>
         <div>
           <h1 class="brand-title">ZenVibe</h1>
-          <p class="brand-subtitle">Âm thanh thiên nhiên & Không gian thư giãn tâm trí</p>
+          <p class="brand-subtitle">Âm thanh thiên nhiên & tĩnh tâm</p>
         </div>
       </div>
 
-      <div class="header-actions">
-        <button class="btn-header" id="btnOpenPresets" title="Xem tất cả các bộ phối âm sẵn">
+      <div class="header-badges">
+        <button class="pill-gold-btn" id="btnUpgradePremium">
           <span>✨</span>
-          <span>Không gian (Presets)</span>
+          <span>Nâng cấp gói</span>
         </button>
-        <button class="btn-header" id="btnSaveMix" title="Lưu phối âm hiện tại">
-          <span>💾</span>
-          <span>Lưu phối âm</span>
-        </button>
-        <button class="btn-header primary" id="btnOpenTimer" title="Hẹn giờ tắt hoặc bật Pomodoro">
-          <span>⏱️</span>
-          <span>Hẹn giờ</span>
-          <span id="timerBadge" style="display:none; padding:2px 8px; border-radius:12px; background:#0284c7; font-size:0.75rem; font-weight:bold;"></span>
-        </button>
+        <div class="streak-badge" title="Chuỗi ngày tĩnh tâm liên tục">
+          <span>🔥</span>
+          <span id="streakCount">12</span>
+        </div>
       </div>
     </header>
 
-    <!-- Dải Presets chọn nhanh (Quick Preset Strip) -->
+    <!-- 2. Weekly Habit Tracker (Hình mẫu 1: T2..T7..CN) -->
+    <section class="weekly-streak-section">
+      <div class="streak-date-label" id="currentDateLabel">HÔM NAY, 11 THG 11</div>
+      <div class="weekdays-row">
+        <button class="day-bubble" data-day="2"><span class="day-text">T2</span></button>
+        <button class="day-bubble" data-day="3"><span class="day-text">T3</span></button>
+        <button class="day-bubble today" data-day="4"><span class="day-text">T4</span></button>
+        <button class="day-bubble" data-day="5"><span class="day-text">T5</span></button>
+        <button class="day-bubble" data-day="6"><span class="day-text">T6</span></button>
+        <button class="day-bubble" data-day="7"><span class="day-text">T7</span></button>
+        <button class="day-bubble" data-day="0"><span class="day-text">CN</span></button>
+      </div>
+    </section>
+
+    <!-- 3. Hero Mindfulness Dashboard & Circular Progress Ring (Hình mẫu 1 & 3) -->
+    <section class="hero-dashboard-card" id="heroCard">
+      <div class="hero-card-header">
+        <div class="hero-card-title">
+          <span>Mục tiêu thư giãn</span>
+        </div>
+        <button class="hero-pill-badge" id="btnHeroOpenMixer">Bảng điều khiển ⚙️</button>
+      </div>
+
+      <!-- Vòng tròn trạng thái trung tâm -->
+      <div class="hero-ring-wrapper">
+        <div class="ring-outer" id="heroRingVisualizer">
+          <div class="ring-main-number" id="heroRingVal">Zen</div>
+          <div class="ring-sub-label" id="heroRingSub">Chạm để thư giãn</div>
+        </div>
+      </div>
+
+      <!-- 3 Cột chỉ số chính (Mục tiêu | Đang phát | Hẹn giờ) -->
+      <div class="hero-stats-row">
+        <div class="hero-stat-col">
+          <div class="stat-value" id="heroStatActive">0</div>
+          <div class="stat-label"><span>🎵</span> Đang phát</div>
+        </div>
+        <div class="hero-stat-col">
+          <div class="stat-value" id="heroStatVol">80%</div>
+          <div class="stat-label"><span>🔊</span> Âm lượng</div>
+        </div>
+        <div class="hero-stat-col">
+          <div class="stat-value" id="heroStatTimer">Tắt</div>
+          <div class="stat-label"><span>⏱️</span> Hẹn giờ</div>
+        </div>
+      </div>
+
+      <!-- 3 Thanh tiến độ chuyên sâu (Chất đạm, Đường bột, Chất béo style) -->
+      <div class="hero-metrics-subcard">
+        <div class="metric-item">
+          <div class="metric-header">
+            <span>⚡</span>
+            <span>Thiên nhiên</span>
+          </div>
+          <div class="metric-bar-track">
+            <div class="metric-bar-fill gold" id="metricNatBar" style="width: 70%;"></div>
+          </div>
+          <div class="metric-num" id="metricNatText">Mưa • Suối • Gió</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-header">
+            <span>☕</span>
+            <span>Không gian</span>
+          </div>
+          <div class="metric-bar-track">
+            <div class="metric-bar-fill blue" id="metricSpaceBar" style="width: 50%;"></div>
+          </div>
+          <div class="metric-num" id="metricSpaceText">Quán cafe • Phím</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-header">
+            <span>🌙</span>
+            <span>Giấc ngủ</span>
+          </div>
+          <div class="metric-bar-track">
+            <div class="metric-bar-fill purple" id="metricSleepBar" style="width: 85%;"></div>
+          </div>
+          <div class="metric-num" id="metricSleepText">Nâu • Sấm • Dế</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Bốn Phím Nổi Bật Nhiều Màu Sắc (Hình mẫu 1 & 2: Vàng, Xanh biển, Xanh lá, Đỏ san hô) -->
+    <section class="quick-action-section">
+      <div class="section-label">
+        <span>✨</span> Âm thanh chọn nhanh
+      </div>
+      <div class="quick-action-grid">
+        <div class="quick-tile" id="tileRain" data-sound-id="rain">
+          <div class="tile-icon-box yellow">🌧️</div>
+          <div class="tile-name">Mưa rào</div>
+        </div>
+        <div class="quick-tile" id="tileStream" data-sound-id="stream">
+          <div class="tile-icon-box blue">💧</div>
+          <div class="tile-name">Suối chảy</div>
+        </div>
+        <div class="quick-tile" id="tileLeaves" data-sound-id="wind_leaves">
+          <div class="tile-icon-box green">🍃</div>
+          <div class="tile-name">Gió lá rừng</div>
+        </div>
+        <div class="quick-tile" id="tileThunder" data-sound-id="thunder">
+          <div class="tile-icon-box coral">⚡</div>
+          <div class="tile-name">Sấm êm dịu</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Dải Gợi Ý Không Gian (Presets Strip) -->
     <section class="presets-strip">
-      <div class="preset-strip-title">
-        <span>⚡</span> Gợi ý nhanh:
+      <div class="section-label">
+        <span>✨</span> Không gian gợi ý sẵn
       </div>
       <div class="preset-chips-wrapper" id="presetChips">
         <!-- Render động từ JS -->
       </div>
     </section>
 
-    <!-- Danh mục phân loại (Category Tabs) -->
+    <!-- 6. Phân Loại Danh Mục (Category Pills Tabs) -->
     <nav class="category-nav" id="categoryNav">
       <!-- Render động từ JS -->
     </nav>
 
-    <!-- Lưới hiển thị các thẻ âm thanh (Sound Grid) -->
+    <!-- 7. Lưới 18 Thẻ Âm Thanh (Sound Cards Grid) -->
     <main>
       <div class="sound-grid" id="soundGrid">
-        <!-- Render động từng card âm thanh từ JS -->
+        <!-- Render động 18 card âm thanh từ JS -->
       </div>
     </main>
   </div>
 
   <!-- ==========================================
-       Master Control Bar (Thanh điều khiển cố định chân trang)
+       8. Bottom Sheet Quick Drawer (Hình mẫu 2)
        ========================================== -->
-  <footer class="master-bar">
-    <div class="master-inner">
-      <!-- Cụm bên trái: Play/Pause tổng & Trạng thái -->
-      <div class="master-left">
-        <button class="btn-master-play paused" id="btnMasterPlay" title="Tạm dừng / Tiếp tục tất cả (Space)">
-          ▶
-        </button>
-        <div class="master-track-info">
-          <div class="master-track-status" id="masterStatusText">Chưa có âm thanh nào bật</div>
-          <div class="master-track-sub" id="masterSubText">Chọn âm thanh để bắt đầu thư giãn</div>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div class="quick-drawer" id="quickDrawer">
+    <div class="drawer-handle-bar"></div>
+    <div class="drawer-header">
+      <div class="drawer-title">🎛️ Bảng Điều Khiển Master</div>
+      <button class="drawer-close" id="btnDrawerClose">&times;</button>
+    </div>
+
+    <!-- Thanh chỉnh Master Volume & Mute -->
+    <div class="drawer-master-row">
+      <button class="btn-master-icon" id="btnMasterPlay" title="Tạm dừng / Tiếp tục">▶</button>
+      <button class="btn-icon-mute" id="btnMasterMute" title="Tắt / Bật tiếng">🔊</button>
+      <input type="range" class="custom-slider" id="masterVolSlider" 
+             min="0" max="1" step="0.01" value="0.8" 
+             aria-label="Âm lượng tổng">
+    </div>
+
+    <!-- Lưới 4 phím tắt hành động nhanh (Hình mẫu 2: Uống nước, Công thức, v.v...) -->
+    <div class="drawer-action-grid">
+      <div class="drawer-action-card" id="btnDrawerTimer30">
+        <span class="drawer-card-icon">💤</span>
+        <div>
+          <div class="drawer-card-label">Ngủ 30 phút</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">Tự fade-out</div>
         </div>
       </div>
-
-      <!-- Cụm ở giữa: Âm lượng Master tổng & Mute -->
-      <div class="master-center">
-        <button class="btn-icon-mute" id="btnMasterMute" title="Tắt / Bật tiếng nhanh (Phím M)">
-          🔊
-        </button>
-        <input type="range" class="custom-slider" id="masterVolSlider" 
-               min="0" max="1" step="0.01" value="0.8" 
-               aria-label="Âm lượng tổng">
+      <div class="drawer-action-card" id="btnDrawerOpenPresets">
+        <span class="drawer-card-icon">✨</span>
+        <div>
+          <div class="drawer-card-label">Đổi không gian</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">Presets gợi ý</div>
+        </div>
       </div>
-
-      <!-- Cụm bên phải: Thao tác bổ trợ -->
-      <div class="master-right">
-        <button class="pill-btn danger" id="btnResetAll" title="Tắt toàn bộ âm thanh">
-          <span>⏹️</span>
-          <span>Tắt tất cả</span>
-        </button>
+      <div class="drawer-action-card" id="btnDrawerSaveMix">
+        <span class="drawer-card-icon">💾</span>
+        <div>
+          <div class="drawer-card-label">Lưu phối âm</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">Bộ nhớ máy</div>
+        </div>
+      </div>
+      <div class="drawer-action-card" id="btnResetAll" style="border-color: rgba(239, 68, 68, 0.3);">
+        <span class="drawer-card-icon">⏹️</span>
+        <div>
+          <div class="drawer-card-label" style="color:var(--accent-coral);">Tắt tất cả</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">Dừng tức thì</div>
+        </div>
       </div>
     </div>
-  </footer>
+  </div>
+
+  <!-- ==========================================
+       9. Thanh Bottom Navigation Dock Cố Định (Hình mẫu 1, 2, 3, 4)
+       ========================================== -->
+  <nav class="bottom-dock">
+    <div class="dock-inner">
+      <!-- 1. Trang chủ -->
+      <button class="dock-item active" id="dockBtnHome">
+        <span class="dock-icon">🏠</span>
+        <span>Trang chủ</span>
+      </button>
+
+      <!-- 2. Không gian -->
+      <button class="dock-item" id="btnOpenPresets">
+        <span class="dock-icon">✨</span>
+        <span>Không gian</span>
+      </button>
+
+      <!-- 3. Nút Nổi Trung Tâm (Center FAB màu tím #A371F7) -->
+      <div class="dock-fab-wrap">
+        <button class="btn-center-fab" id="btnCenterFab" title="Bảng điều khiển nhanh & Play/Pause">
+          <span id="fabIcon">▶</span>
+        </button>
+      </div>
+
+      <!-- 4. Hẹn giờ -->
+      <button class="dock-item" id="btnOpenTimer">
+        <span class="dock-icon">⏱️</span>
+        <span>Hẹn giờ</span>
+        <span id="timerBadge" style="display:none; position:absolute; top:4px; right:12px; background:var(--primary); color:#fff; font-size:0.65rem; padding:1px 5px; border-radius:10px;"></span>
+      </button>
+
+      <!-- 5. Lưu phối âm / Yêu thích -->
+      <button class="dock-item" id="btnSaveMix">
+        <span class="dock-icon">💾</span>
+        <span>Lưu Mix</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Các thẻ trạng thái ẩn để tương thích 100% với code hiện có -->
+  <div style="display:none;">
+    <div id="masterStatusText">Chưa có âm thanh nào bật</div>
+    <div id="masterSubText">Chọn âm thanh để bắt đầu thư giãn</div>
+  </div>
 
   <!-- ==========================================
        Modal 1: Hẹn Giờ Ngủ & Pomodoro
@@ -165,7 +329,7 @@
       </div>
 
       <div class="timer-actions">
-        <button class="btn-block btn-secondary" id="btnStopTimer">Dừng hẹn giờ</button>
+        <button class="btn-primary" id="btnStopTimer" style="background:#28273f; box-shadow:none;">Hủy hẹn giờ</button>
       </div>
     </div>
   </div>
@@ -180,12 +344,12 @@
         <button class="modal-close" aria-label="Đóng">&times;</button>
       </div>
 
-      <h3 style="font-size:0.95rem; color:var(--accent-warm); margin-bottom:12px;">Gợi ý không gian chuẩn:</h3>
+      <h3 style="font-size:0.95rem; color:var(--accent-gold); margin-bottom:12px;">Gợi ý không gian chuẩn:</h3>
       <div class="presets-list" id="defaultPresetsList">
         <!-- Render từ presets.js -->
       </div>
 
-      <h3 style="font-size:0.95rem; color:var(--accent); margin:20px 0 12px 0;">Phối âm của bạn:</h3>
+      <h3 style="font-size:0.95rem; color:var(--primary-light); margin:20px 0 12px 0;">Phối âm của bạn:</h3>
       <div class="presets-list" id="customPresetsList">
         <!-- Render từ presets.js -->
       </div>
@@ -206,9 +370,9 @@
       </p>
       <input type="text" id="mixNameInput" 
              placeholder="Ví dụ: Đọc sách chiều mưa, Tập trung deadline..."
-             style="width:100%; padding:12px 16px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border); border-radius:var(--radius-md); color:#fff; font-size:0.95rem; outline:none; margin-bottom:20px;">
+             style="width:100%; padding:13px 18px; background:#141322; border:1px solid var(--panel-border); border-radius:var(--radius-md); color:#fff; font-size:0.95rem; outline:none; margin-bottom:20px;">
       <div class="timer-actions">
-        <button class="btn-block btn-primary" id="btnConfirmSaveMix">Lưu vào máy</button>
+        <button class="btn-primary" id="btnConfirmSaveMix">Lưu vào máy</button>
       </div>
     </div>
   </div>

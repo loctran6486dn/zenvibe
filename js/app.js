@@ -1,6 +1,6 @@
 /**
  * app.js
- * Điều khiển chính ứng dụng ZenVibe (UI, Event Handlers, Canvas Animation, Phím tắt)
+ * Điều khiển chính ứng dụng ZenVibe (UI/UX Dark Purple #A371F7, Event Handlers, Canvas Animation, Phím tắt)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -34,6 +34,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const presetsModal = document.getElementById('presetsModal');
   const saveMixModal = document.getElementById('saveMixModal');
   const toastNotice = document.getElementById('toastNotice');
+
+  // Mobile Drawer & Navigation Elements
+  const quickDrawer = document.getElementById('quickDrawer');
+  const drawerBackdrop = document.getElementById('drawerBackdrop');
+  const btnDrawerClose = document.getElementById('btnDrawerClose');
+  const btnHeroOpenMixer = document.getElementById('btnHeroOpenMixer');
+  const btnCenterFab = document.getElementById('btnCenterFab');
+  const fabIcon = document.getElementById('fabIcon');
+  const dockBtnHome = document.getElementById('dockBtnHome');
+
+  // Hero Dashboard Elements
+  const heroRingVisualizer = document.getElementById('heroRingVisualizer');
+  const heroRingVal = document.getElementById('heroRingVal');
+  const heroRingSub = document.getElementById('heroRingSub');
+  const heroStatActive = document.getElementById('heroStatActive');
+  const heroStatVol = document.getElementById('heroStatVol');
+  const heroStatTimer = document.getElementById('heroStatTimer');
+
+  // Quick Action Tiles
+  const quickTiles = document.querySelectorAll('.quick-tile');
+
+  // Upgrade & Streaks
+  const btnUpgradePremium = document.getElementById('btnUpgradePremium');
+  if (btnUpgradePremium) {
+    btnUpgradePremium.addEventListener('click', () => {
+      showToast('🌟 Bạn đang sử dụng gói ZenVibe Premium đầy đủ 100% tính năng!');
+    });
+  }
 
   // Mở khóa âm thanh tức thì trên iOS Safari & Android Chrome khi chạm lần đầu
   const unlockMobileAudio = () => {
@@ -129,8 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Event click bật / tắt âm thanh
       const triggerElements = card.querySelectorAll('.card-top, .card-desc');
       triggerElements.forEach(el => {
-        el.addEventListener('click', (e) => {
-          // Bỏ qua nếu click trực tiếp vào nút con khác
+        el.addEventListener('click', () => {
           toggleSoundItem(sound.id);
         });
       });
@@ -193,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.innerHTML = `<span>${preset.icon}</span> <span>${preset.name}</span>`;
       chip.addEventListener('click', () => {
         presetManager.applyPreset(preset);
-        showToast(`Đã áp dụng preset: ${preset.name}`);
+        showToast(`Đã áp dụng: ${preset.name}`);
       });
       presetChipsWrapper.appendChild(chip);
     });
@@ -202,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     presetManager.customPresets.forEach(preset => {
       const chip = document.createElement('button');
       chip.className = 'preset-chip';
-      chip.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+      chip.style.borderColor = 'rgba(163, 113, 247, 0.4)';
       chip.innerHTML = `<span>${preset.icon}</span> <span>${preset.name}</span>`;
       chip.addEventListener('click', () => {
         presetManager.applyPreset(preset);
@@ -288,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Khi preset được áp dụng từ bất kỳ đâu, cập nhật lại toàn bộ UI
-  window.addEventListener('zen:preset_applied', (e) => {
+  window.addEventListener('zen:preset_applied', () => {
     isMasterPaused = false;
     btnMasterPlay.classList.remove('paused');
     btnMasterPlay.innerHTML = '⏸';
@@ -370,20 +397,103 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function updateMetricBars() {
+    const metricNatBar = document.getElementById('metricNatBar');
+    const metricSpaceBar = document.getElementById('metricSpaceBar');
+    const metricSleepBar = document.getElementById('metricSleepBar');
+    const metricNatText = document.getElementById('metricNatText');
+    const metricSpaceText = document.getElementById('metricSpaceText');
+    const metricSleepText = document.getElementById('metricSleepText');
+
+    let natActive = 0, spaceActive = 0, sleepActive = 0;
+    const natNames = [], spaceNames = [], sleepNames = [];
+
+    for (const [id, channel] of engine.channels.entries()) {
+      if (channel.isPlaying) {
+        const item = SOUND_ITEMS.find(s => s.id === id);
+        if (item) {
+          if (['rain', 'water', 'nature'].includes(item.category)) {
+            natActive++;
+            natNames.push(item.name);
+          } else if (['urban', 'focus'].includes(item.category)) {
+            spaceActive++;
+            spaceNames.push(item.name);
+          } else if (['sleep'].includes(item.category)) {
+            sleepActive++;
+            sleepNames.push(item.name);
+          }
+        }
+      }
+    }
+
+    if (metricNatBar) {
+      const pct = natActive > 0 ? Math.min(100, natActive * 35) : 15;
+      metricNatBar.style.width = `${pct}%`;
+      if (metricNatText) metricNatText.textContent = natNames.length > 0 ? natNames.slice(0, 2).join(' • ') : 'Mưa • Suối • Gió';
+    }
+
+    if (metricSpaceBar) {
+      const pct = spaceActive > 0 ? Math.min(100, spaceActive * 45) : 15;
+      metricSpaceBar.style.width = `${pct}%`;
+      if (metricSpaceText) metricSpaceText.textContent = spaceNames.length > 0 ? spaceNames.slice(0, 2).join(' • ') : 'Quán cafe • Phím';
+    }
+
+    if (metricSleepBar) {
+      const pct = sleepActive > 0 ? Math.min(100, sleepActive * 45) : 15;
+      metricSleepBar.style.width = `${pct}%`;
+      if (metricSleepText) metricSleepText.textContent = sleepNames.length > 0 ? sleepNames.slice(0, 2).join(' • ') : 'Nâu • Sấm • Dế';
+    }
+  }
+
   function updateMasterStatus() {
     const activeCount = engine.getActiveCount();
 
     if (activeCount > 0) {
       btnMasterPlay.classList.remove('paused');
       btnMasterPlay.innerHTML = '⏸';
-      masterStatusText.innerHTML = `<span class="pulse-dot"></span> Đang phát ${activeCount} âm thanh`;
-      masterSubText.textContent = 'Nhấn phím Space để tạm dừng / phát tiếp';
+      if (fabIcon) fabIcon.textContent = '⏸';
+      if (btnCenterFab) btnCenterFab.classList.add('is-playing');
+      if (masterStatusText) masterStatusText.innerHTML = `<span class="pulse-dot"></span> Đang phát ${activeCount} âm thanh`;
+      if (masterSubText) masterSubText.textContent = 'Nhấn phím Space để tạm dừng / phát tiếp';
+
+      if (heroRingVal && (!timer || !timer.isRunning)) {
+        heroRingVal.textContent = `${activeCount}`;
+      }
+      if (heroRingSub && (!timer || !timer.isRunning)) {
+        heroRingSub.textContent = 'Âm thanh đang phát';
+      }
     } else {
       btnMasterPlay.classList.add('paused');
       btnMasterPlay.innerHTML = '▶';
-      masterStatusText.innerHTML = 'Chưa có âm thanh nào bật';
-      masterSubText.textContent = 'Chọn âm thanh hoặc chọn Preset để bắt đầu thư giãn';
+      if (fabIcon) fabIcon.textContent = '▶';
+      if (btnCenterFab) btnCenterFab.classList.remove('is-playing');
+      if (masterStatusText) masterStatusText.innerHTML = 'Chưa có âm thanh nào bật';
+      if (masterSubText) masterSubText.textContent = 'Chọn âm thanh hoặc chọn Preset để bắt đầu thư giãn';
+
+      if (heroRingVal && (!timer || !timer.isRunning)) {
+        heroRingVal.textContent = 'Zen';
+      }
+      if (heroRingSub && (!timer || !timer.isRunning)) {
+        heroRingSub.textContent = 'Chạm để thư giãn';
+      }
     }
+
+    if (heroStatActive) heroStatActive.textContent = `${activeCount}`;
+    if (heroStatVol) heroStatVol.textContent = `${Math.round(engine.masterVolume * 100)}%`;
+
+    // Cập nhật trạng thái active cho 4 quick tiles
+    quickTiles.forEach(tile => {
+      const sId = tile.dataset.soundId;
+      const ch = engine.getChannel(sId);
+      if (ch && ch.isPlaying) {
+        tile.classList.add('is-active');
+      } else {
+        tile.classList.remove('is-active');
+      }
+    });
+
+    // Cập nhật các thanh tiến độ 3 nhóm
+    updateMetricBars();
 
     updateMediaSession(activeCount);
   }
@@ -409,10 +519,15 @@ document.addEventListener('DOMContentLoaded', () => {
       isMasterPaused = true;
       btnMasterPlay.classList.add('paused');
       btnMasterPlay.innerHTML = '▶';
-      masterStatusText.innerHTML = 'Đã tạm dừng';
-      masterSubText.textContent = 'Nhấn để tiếp tục nghe';
+      if (fabIcon) fabIcon.textContent = '▶';
+      if (btnCenterFab) btnCenterFab.classList.remove('is-playing');
+      if (masterStatusText) masterStatusText.innerHTML = 'Đã tạm dừng';
+      if (masterSubText) masterSubText.textContent = 'Nhấn để tiếp tục nghe';
       
       SOUND_ITEMS.forEach(s => updateCardUI(s.id, false));
+      quickTiles.forEach(t => t.classList.remove('is-active'));
+      if (heroRingVal) heroRingVal.textContent = 'Tạm dừng';
+      if (heroRingSub) heroRingSub.textContent = 'Chạm để phát tiếp';
     } else if (isMasterPaused && activeBackupState.size > 0) {
       // Khôi phục các kênh trước đó
       activeBackupState.forEach((vol, id) => {
@@ -434,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = parseFloat(e.target.value);
     engine.setMasterVolume(val);
     btnMasterMute.innerHTML = val === 0 ? '🔇' : '🔊';
+    if (heroStatVol) heroStatVol.textContent = `${Math.round(val * 100)}%`;
   });
 
   // Master Mute Button
@@ -449,6 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeBackupState.clear();
     isMasterPaused = false;
     SOUND_ITEMS.forEach(s => updateCardUI(s.id, false));
+    quickTiles.forEach(t => t.classList.remove('is-active'));
     updateMasterStatus();
     showToast('Đã tắt tất cả âm thanh');
   });
@@ -542,6 +659,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ? 'Âm thanh sẽ hạ dần âm lượng trong 15s cuối'
         : 'Phiên làm việc tập trung cao độ';
 
+      if (heroStatTimer) heroStatTimer.textContent = formatted;
+      if (heroRingVal) heroRingVal.textContent = formatted;
+      if (heroRingSub) heroRingSub.textContent = mode === 'sleep' ? 'Đang hẹn giờ ngủ' : 'Pomodoro tập trung';
+
       // Cập nhật thông tin lên màn hình khóa mỗi 5 giây
       if (Math.abs(remaining - lastMediaUpdateSec) >= 5) {
         lastMediaUpdateSec = remaining;
@@ -551,7 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
       timerBadge.style.display = 'none';
       btnOpenTimer.classList.remove('active');
       timerStatusHint.textContent = 'Hẹn giờ đang tắt';
-      updateMediaSession(engine.getActiveCount());
+      if (heroStatTimer) heroStatTimer.textContent = 'Tắt';
+      updateMasterStatus();
     }
   });
 
@@ -622,10 +744,121 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 6. KEYBOARD SHORTCUTS
+  // 6. BOTTOM SHEET QUICK DRAWER & FAB
+  // ==========================================
+  const openDrawer = () => {
+    if (quickDrawer) quickDrawer.classList.add('open');
+    if (drawerBackdrop) drawerBackdrop.classList.add('open');
+  };
+
+  const closeDrawer = () => {
+    if (quickDrawer) quickDrawer.classList.remove('open');
+    if (drawerBackdrop) drawerBackdrop.classList.remove('open');
+  };
+
+  if (btnHeroOpenMixer) btnHeroOpenMixer.addEventListener('click', openDrawer);
+  if (btnDrawerClose) btnDrawerClose.addEventListener('click', closeDrawer);
+  if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
+  const btnDrawerTimer30 = document.getElementById('btnDrawerTimer30');
+  if (btnDrawerTimer30) {
+    btnDrawerTimer30.addEventListener('click', () => {
+      engine.initContext();
+      const shield = document.getElementById('bgShieldAudio');
+      if (shield && shield.paused) shield.play().catch(() => {});
+      if (engine.getActiveCount() === 0) {
+        presetManager.applyPreset(DEFAULT_PRESETS[0]);
+      }
+      timer.startSleepTimer(30);
+      showToast('💤 Hẹn giờ ngủ: 30 phút (tự fade-out êm dịu)');
+      closeDrawer();
+      updateMediaSession(engine.getActiveCount());
+    });
+  }
+
+  const btnDrawerOpenPresets = document.getElementById('btnDrawerOpenPresets');
+  if (btnDrawerOpenPresets) {
+    btnDrawerOpenPresets.addEventListener('click', () => {
+      closeDrawer();
+      renderPresetsModalList();
+      openModal(presetsModal);
+    });
+  }
+
+  const btnDrawerSaveMix = document.getElementById('btnDrawerSaveMix');
+  if (btnDrawerSaveMix) {
+    btnDrawerSaveMix.addEventListener('click', () => {
+      closeDrawer();
+      btnSaveMix.click();
+    });
+  }
+
+  // Floating Action Button (#A371F7 Purple Center Button)
+  if (btnCenterFab) {
+    btnCenterFab.addEventListener('click', () => {
+      btnMasterPlay.click();
+    });
+  }
+
+  // Hero circular ring
+  if (heroRingVisualizer) {
+    heroRingVisualizer.addEventListener('click', () => {
+      btnMasterPlay.click();
+    });
+  }
+
+  // Home icon click -> scroll to top
+  if (dockBtnHome) {
+    dockBtnHome.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // Quick Action Tiles Click
+  quickTiles.forEach(tile => {
+    const soundId = tile.dataset.soundId;
+    tile.addEventListener('click', () => {
+      toggleSoundItem(soundId);
+    });
+  });
+
+  // ==========================================
+  // 7. DATE & WEEKDAYS INITIALIZER (HÌNH MẪU 1)
+  // ==========================================
+  function initDateAndWeekdays() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0: CN, 1: T2, 2: T3, 3: T4, 4: T5, 5: T6, 6: T7
+    const dayOfMonth = now.getDate();
+    const month = now.getMonth() + 1;
+
+    const dateLabel = document.getElementById('currentDateLabel');
+    if (dateLabel) {
+      dateLabel.textContent = `HÔM NAY, ${dayOfMonth} THG ${month}`;
+    }
+
+    const dayBubbles = document.querySelectorAll('.day-bubble');
+    const targetDataDay = dayOfWeek === 0 ? '0' : String(dayOfWeek + 1);
+
+    dayBubbles.forEach(bubble => {
+      if (bubble.dataset.day === targetDataDay) {
+        bubble.classList.add('today');
+      } else {
+        bubble.classList.remove('today');
+      }
+
+      bubble.addEventListener('click', () => {
+        dayBubbles.forEach(b => b.classList.remove('today'));
+        bubble.classList.add('today');
+        const dayName = bubble.querySelector('.day-text')?.textContent || '';
+        showToast(`Mục tiêu tĩnh tâm ngày ${dayName}: 30 phút`);
+      });
+    });
+  }
+
+  // ==========================================
+  // 8. KEYBOARD SHORTCUTS
   // ==========================================
   window.addEventListener('keydown', (e) => {
-    // Không nhận phím tắt khi đang gõ text vào input
     if (e.target.tagName === 'INPUT') return;
 
     if (e.code === 'Space') {
@@ -639,12 +872,13 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPresetsModalList();
       openModal(presetsModal);
     } else if (e.code === 'Escape') {
+      closeDrawer();
       document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m));
     }
   });
 
   // ==========================================
-  // 7. TOAST NOTIFICATION
+  // 9. TOAST NOTIFICATION
   // ==========================================
   let toastTimeout = null;
   function showToast(msg) {
@@ -659,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 8. AMBIENT CANVAS VISUALIZER (Lá bay & Đom đóm)
+  // 10. AMBIENT CANVAS VISUALIZER (Bụi sao tím & Đom đóm vàng)
   // ==========================================
   function initAmbientCanvas() {
     const canvas = document.getElementById('ambientCanvas');
@@ -674,7 +908,6 @@ document.addEventListener('DOMContentLoaded', () => {
       height = canvas.height = window.innerHeight;
     });
 
-    // Hạt đom đóm & mảnh lá rơi nhẹ
     const particles = [];
     const PARTICLE_COUNT = 38;
 
@@ -682,12 +915,13 @@ document.addEventListener('DOMContentLoaded', () => {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 2 + 1,
-        speedX: Math.random() * 0.4 - 0.2 + 0.15, // trôi nhẹ sang phải theo gió
-        speedY: Math.random() * 0.5 + 0.2, // rơi từ từ
+        radius: Math.random() * 2.2 + 0.8,
+        speedX: Math.random() * 0.4 - 0.2 + 0.15,
+        speedY: Math.random() * 0.45 + 0.15,
         alpha: Math.random() * 0.5 + 0.2,
         pulseSpeed: Math.random() * 0.02 + 0.01,
-        isLeaf: Math.random() > 0.65,
+        isPurple: Math.random() > 0.4,
+        isLeaf: Math.random() > 0.7,
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.02
       });
@@ -702,7 +936,6 @@ document.addEventListener('DOMContentLoaded', () => {
         p.rotation += p.rotSpeed;
         p.alpha += Math.sin(Date.now() * 0.001 * p.pulseSpeed) * 0.005;
 
-        // Loop qua biên màn hình
         if (p.y > height) {
           p.y = -10;
           p.x = Math.random() * width;
@@ -714,16 +947,24 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.rotate(p.rotation);
 
         if (p.isLeaf) {
-          // Vẽ chiếc lá thu nhỏ bé bay xào xạc theo gió
-          ctx.fillStyle = `rgba(52, 211, 153, ${Math.max(0.1, Math.min(0.4, p.alpha))})`;
+          // Chiếc lá xào xạc ánh tím #A371F7
+          ctx.fillStyle = `rgba(163, 113, 247, ${Math.max(0.12, Math.min(0.45, p.alpha))})`;
           ctx.beginPath();
           ctx.ellipse(0, 0, 4.5, 2.2, 0, 0, Math.PI * 2);
           ctx.fill();
-        } else {
-          // Vẽ đom đóm phát sáng dịu
-          ctx.fillStyle = `rgba(56, 189, 248, ${Math.max(0.15, Math.min(0.65, p.alpha))})`;
+        } else if (p.isPurple) {
+          // Đom đóm tím dịu #A371F7
+          ctx.fillStyle = `rgba(163, 113, 247, ${Math.max(0.15, Math.min(0.7, p.alpha))})`;
           ctx.shadowBlur = 8;
-          ctx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+          ctx.shadowColor = 'rgba(163, 113, 247, 0.75)';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Đom đóm vàng hổ phách #FBBF24
+          ctx.fillStyle = `rgba(251, 191, 36, ${Math.max(0.15, Math.min(0.65, p.alpha))})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = 'rgba(251, 191, 36, 0.7)';
           ctx.beginPath();
           ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
           ctx.fill();
@@ -742,6 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
   renderSounds();
   renderPresetsStrip();
+  initDateAndWeekdays();
   initAmbientCanvas();
   updateMasterStatus();
 });

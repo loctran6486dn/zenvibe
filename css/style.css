@@ -1,36 +1,59 @@
 /* ==========================================================================
-   ZenVibe - Relaxing Sounds Theme & Aesthetics
-   Phong cách Zen tối giản, hiện đại, Glassmorphism, êm dịu mắt
+   ZenVibe - Premium Mobile Fitness/Health Dark Purple UI/UX Theme
+   Màu sắc chủ đạo (Primary Buttons & Accents): #A371F7
    ========================================================================== */
 
 :root {
-  --bg-dark: #0d1117;
-  --bg-gradient: radial-gradient(circle at 20% 20%, #161f30 0%, #0c1017 60%, #07090d 100%);
-  --panel-bg: rgba(22, 29, 43, 0.72);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --card-bg: rgba(28, 38, 56, 0.55);
+  /* Color Palette */
+  --bg-dark: #141322;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #201e38 0%, #151424 55%, #100f1c 100%);
+  --panel-bg: #1c1b30;
+  --panel-border: rgba(163, 113, 247, 0.15);
+  
+  --card-bg: #222138;
   --card-border: rgba(255, 255, 255, 0.06);
-  --card-active-bg: rgba(36, 62, 88, 0.75);
-  --card-active-border: rgba(56, 189, 248, 0.4);
-  --card-active-shadow: 0 8px 32px rgba(14, 165, 233, 0.15);
-  
-  --primary: #38bdf8;
-  --primary-hover: #7dd3fc;
-  --accent: #34d399;
-  --accent-warm: #fbbf24;
-  
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
-  
-  --slider-track: rgba(255, 255, 255, 0.12);
-  --slider-fill: #38bdf8;
-  
-  --radius-lg: 18px;
-  --radius-md: 12px;
+  --card-hover: #292844;
+  --card-active-bg: #2a2846;
+  --card-active-border: #A371F7;
+  --card-active-shadow: 0 10px 30px rgba(163, 113, 247, 0.28);
+
+  /* Primary Accent - Lavender Purple (#A371F7) */
+  --primary: #A371F7;
+  --primary-hover: #8e54f5;
+  --primary-light: #c09afc;
+  --primary-glow: rgba(163, 113, 247, 0.45);
+  --primary-subtle: rgba(163, 113, 247, 0.14);
+
+  /* Secondary Accents from Reference App */
+  --accent-gold: #FBBF24;
+  --accent-gold-hover: #F59E0B;
+  --accent-gold-subtle: rgba(251, 191, 36, 0.15);
+  --accent-blue: #38BDF8;
+  --accent-blue-subtle: rgba(56, 189, 248, 0.15);
+  --accent-green: #34D399;
+  --accent-green-subtle: rgba(52, 211, 153, 0.15);
+  --accent-coral: #F87171;
+  --accent-coral-subtle: rgba(248, 113, 113, 0.15);
+
+  /* Text Colors */
+  --text-main: #FFFFFF;
+  --text-muted: #9c99b8;
+  --text-subtle: #6e6b8c;
+
+  /* Sliders & Inputs */
+  --slider-track: #2f2e49;
+  --slider-fill: #A371F7;
+  --slider-thumb: #FFFFFF;
+
+  /* Border Radius */
+  --radius-xl: 26px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
   --radius-full: 9999px;
-  
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Typography & Transitions */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -50,10 +73,10 @@ body {
   overflow-x: hidden;
   position: relative;
   line-height: 1.5;
-  padding-bottom: calc(135px + env(safe-area-inset-bottom, 0px)); /* Chừa khoảng trống cho thanh Master Bar và Home Bar */
+  padding-bottom: calc(115px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Background Canvas cho hiệu ứng lá bay & đom đóm êm dịu */
+/* Background Canvas cho hiệu ứng đom đóm & bụi sao thư giãn */
 #ambientCanvas {
   position: fixed;
   top: 0;
@@ -62,306 +85,601 @@ body {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.65;
+  opacity: 0.55;
 }
 
 .container {
-  max-width: 1280px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 24px 20px;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 24px 20px;
   position: relative;
   z-index: 1;
 }
 
-/* Header */
+/* ==========================================================================
+   1. Header Bar & Top Action Badges (Inspired by Image 1 & 3)
+   ========================================================================== */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--panel-border);
 }
 
 .brand-wrapper {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .brand-logo {
-  font-size: 2.2rem;
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(52, 211, 153, 0.2));
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 1.8rem;
+  width: 46px;
+  height: 46px;
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary-glow);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
-  animation: floatSoft 6s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(163, 113, 247, 0.25);
 }
 
 .brand-title {
-  font-size: 1.6rem;
+  font-size: 1.45rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffffff 40%, #7dd3fc 100%);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #FFFFFF 40%, var(--primary-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
 }
 
 .brand-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.header-actions {
+.header-badges {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
-.btn-header {
+/* Gold Pill Button (Nâng cấp gói / Trải nghiệm ngay) */
+.pill-gold-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--panel-border);
-  color: var(--text-main);
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #FDE68A 0%, #FBBF24 100%);
+  color: #78350F;
+  border: none;
   border-radius: var(--radius-full);
-  font-size: 0.88rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.35);
   transition: var(--transition);
 }
 
-.btn-header:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+.pill-gold-btn:hover {
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.45);
 }
 
-.btn-header.primary {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  border-color: #38bdf8;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
-}
-
-.btn-header.primary:hover {
-  background: linear-gradient(135deg, #0369a1, #0284c7);
-  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
-}
-
-/* Category Filter Tabs */
-.category-nav {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 4px 2px 18px 2px;
-  margin-bottom: 12px;
-  scrollbar-width: none;
-}
-.category-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.cat-tab {
+.streak-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--panel-border);
+  gap: 5px;
+  padding: 7px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
   border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   2. Weekly Mindfulness Habit Strip (Image 1 T2..CN Row)
+   ========================================================================== */
+.weekly-streak-section {
+  margin-bottom: 22px;
+}
+
+.streak-date-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.weekdays-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-bubble {
+  flex: 1;
+  max-width: 48px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   color: var(--text-muted);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
+  border-radius: 50%;
+  border: 1px solid transparent;
   cursor: pointer;
-  white-space: nowrap;
   transition: var(--transition);
 }
 
-.cat-tab:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.08);
+.day-bubble:hover {
+  color: #FFFFFF;
 }
 
-.cat-tab.active {
-  background: rgba(56, 189, 248, 0.16);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #7dd3fc;
-  box-shadow: 0 2px 12px rgba(56, 189, 248, 0.15);
+/* Today's Active Day (Glowing Purple Ring with #A371F7) */
+.day-bubble.today {
+  background: rgba(163, 113, 247, 0.16);
+  border: 2px solid var(--primary);
+  color: #FFFFFF;
+  box-shadow: 0 0 16px rgba(163, 113, 247, 0.45);
 }
 
-/* Presets Showcase Banner */
-.presets-strip {
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  margin-bottom: 28px;
+.day-bubble.today .day-text {
+  color: var(--primary-light);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   3. Hero Mindfulness Dashboard & Circular Progress Ring (Image 1)
+   ========================================================================== */
+.hero-dashboard-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  overflow-x: auto;
+  margin-bottom: 20px;
 }
 
-.preset-strip-title {
+.hero-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.88rem;
+}
+
+.hero-pill-badge {
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--accent-warm);
-  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hero-pill-badge:hover {
+  background: var(--primary-subtle);
+  color: var(--primary-light);
+  border-color: var(--primary-glow);
+}
+
+/* Circular Dashboard Ring */
+.hero-ring-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 24px 0;
+}
+
+.ring-outer {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #201e38 0%, #17162b 100%);
+  border: 7px solid #2e2d4a;
+  box-shadow: 0 0 28px rgba(163, 113, 247, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: var(--transition);
+}
+
+.hero-dashboard-card.is-active .ring-outer {
+  border-color: var(--primary);
+  box-shadow: 0 0 32px var(--primary-glow);
+}
+
+.ring-main-number {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.ring-sub-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* 3 Quick Columns below ring */
+.hero-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hero-stat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Category Level Progress Bars (Matching Image 1: Chất đạm, Đường bột, Chất béo) */
+.hero-metrics-subcard {
+  background: #1c1b30;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.metric-bar-track {
+  width: 100%;
+  height: 6px;
+  background: #2e2d48;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.metric-bar-fill.gold { background: var(--accent-gold); }
+.metric-bar-fill.blue { background: var(--accent-blue); }
+.metric-bar-fill.purple { background: var(--primary); }
+
+.metric-num {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   4. Four Colorful Quick-Action Tiles (Image 1 & 2: Yellow, Blue, Green, Coral)
+   ========================================================================== */
+.quick-action-section {
+  margin-bottom: 24px;
+}
+
+.section-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.quick-tile {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.quick-tile:hover {
+  transform: translateY(-2px);
+  background: var(--card-hover);
+}
+
+.tile-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: #111;
+  transition: var(--transition);
+}
+
+.tile-icon-box.yellow { background: var(--accent-gold); box-shadow: 0 4px 14px rgba(251, 191, 36, 0.3); }
+.tile-icon-box.blue   { background: #3B82F6; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3); }
+.tile-icon-box.green  { background: #10B981; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); }
+.tile-icon-box.coral  { background: #F87171; box-shadow: 0 4px 14px rgba(248, 113, 113, 0.3); }
+
+.tile-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.quick-tile.is-active {
+  border-color: var(--primary);
+  background: var(--card-active-bg);
+  box-shadow: 0 0 16px rgba(163, 113, 247, 0.35);
+}
+
+/* ==========================================================================
+   5. Presets Strip & Category Pills (Image 4 Tab Pills)
+   ========================================================================== */
+.presets-strip {
+  margin-bottom: 20px;
 }
 
 .preset-chips-wrapper {
   display: flex;
   gap: 10px;
   overflow-x: auto;
+  padding: 4px 0 10px 0;
   scrollbar-width: none;
 }
 
+.preset-chips-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
 .preset-chip {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-full);
-  color: var(--text-main);
-  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
   transition: var(--transition);
 }
 
 .preset-chip:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.4);
-  transform: translateY(-1px);
+  background: var(--card-hover);
+  color: #FFFFFF;
 }
 
-/* Sound Grid */
+.preset-chip.active {
+  background: var(--primary);
+  border-color: var(--primary-light);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px var(--primary-glow);
+  font-weight: 600;
+}
+
+/* Category Navigation Tabs (Pills) */
+.category-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 22px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.category-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.cat-tab:hover {
+  background: var(--card-hover);
+  color: #FFFFFF;
+}
+
+.cat-tab.active {
+  background: var(--primary);
+  border-color: var(--primary-light);
+  color: #FFFFFF;
+  box-shadow: 0 4px 18px var(--primary-glow);
+}
+
+/* ==========================================================================
+   6. Sound Cards Grid (Image 1 & 4 Cards)
+   ========================================================================== */
 .sound-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
-/* Sound Card */
 .sound-card {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  transition: var(--transition);
-  position: relative;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 165px;
+  transition: var(--transition);
+  position: relative;
 }
 
 .sound-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .sound-card.active {
   background: var(--card-active-bg);
-  border-color: var(--card-active-border);
+  border-color: var(--primary);
   box-shadow: var(--card-active-shadow);
 }
 
 .card-top {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
 .card-info {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .card-icon {
-  font-size: 1.8rem;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition);
-  flex-shrink: 0;
 }
 
 .sound-card.active .card-icon {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: rgba(56, 189, 248, 0.5);
-  transform: scale(1.05);
-  animation: pulseGlow 3s infinite;
-}
-
-.card-text {
-  flex: 1;
+  background: var(--primary-subtle);
+  border-color: var(--primary-glow);
+  box-shadow: 0 0 14px rgba(163, 113, 247, 0.35);
 }
 
 .card-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 2px;
-}
-
-.sound-card.active .card-name {
-  color: #7dd3fc;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #FFFFFF;
 }
 
 .card-tag {
   display: inline-block;
+  margin-top: 3px;
   font-size: 0.72rem;
-  padding: 2px 7px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
   color: var(--text-muted);
+}
+
+.sound-card.active .card-tag {
+  background: var(--primary-subtle);
+  color: var(--primary-light);
 }
 
 .card-desc {
   font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.35;
-  margin-bottom: 16px;
+  line-height: 1.4;
+  margin-bottom: 14px;
   cursor: pointer;
 }
 
-/* Card Switch / Toggle */
+/* Card Toggle Button (Play/Pause) */
 .toggle-btn {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1px solid var(--card-border);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -374,17 +692,17 @@ body {
 
 .toggle-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: var(--text-main);
+  color: #FFFFFF;
 }
 
 .sound-card.active .toggle-btn {
-  background: #0284c7;
-  border-color: #38bdf8;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+  background: var(--primary);
+  border-color: var(--primary-light);
+  color: #FFFFFF;
+  box-shadow: 0 0 16px var(--primary-glow);
 }
 
-/* Volume Slider Controls */
+/* Volume Slider in Cards */
 .volume-control-wrap {
   display: flex;
   align-items: center;
@@ -399,212 +717,293 @@ body {
 }
 
 .vol-icon {
-  font-size: 0.85rem;
-  color: var(--text-subtle);
-}
-
-.sound-card.active .vol-icon {
-  color: var(--primary);
+  font-size: 0.88rem;
+  color: var(--text-muted);
 }
 
 .custom-slider {
   -webkit-appearance: none;
-  appearance: none;
   width: 100%;
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-full);
   background: var(--slider-track);
   outline: none;
   cursor: pointer;
-  transition: var(--transition);
 }
 
 .custom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #f1f5f9;
+  background: #FFFFFF;
+  border: 2px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-  border: 2px solid #0284c7;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-  transition: var(--transition);
+  transition: transform 0.15s ease;
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  background: #38bdf8;
+  transform: scale(1.18);
 }
 
 .vol-value {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
-  width: 32px;
+  min-width: 36px;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .sound-card.active .vol-value {
-  color: #7dd3fc;
+  color: var(--primary-light);
 }
 
 /* ==========================================================================
-   Master Control Bar (Fixed Bottom Bar)
+   7. Fixed Bottom Navigation Dock & Center Elevated FAB (Images 1, 2, 3, 4)
    ========================================================================== */
-.master-bar {
+.bottom-dock {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 99;
-  background: rgba(13, 17, 23, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  background: rgba(20, 19, 34, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)) 16px;
+  z-index: 100;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
 }
 
-.master-inner {
-  max-width: 1280px;
+.dock-inner {
+  max-width: 600px;
   margin: 0 auto;
   display: flex;
+  justify-content: space-around;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
+  position: relative;
 }
 
-.master-left {
+.dock-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: var(--transition);
+  position: relative;
 }
 
-.btn-master-play {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #0284c7, #0ea5e9);
-  color: #fff;
+.dock-item .dock-icon {
   font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.dock-item:hover, .dock-item.active {
+  color: var(--primary);
+}
+
+.dock-item.active .dock-icon {
+  transform: translateY(-2px);
+  color: var(--primary);
+}
+
+/* Center Elevated FAB (The Purple Plus Button from Screenshots!) */
+.dock-fab-wrap {
+  position: relative;
+  top: -18px;
+}
+
+.btn-center-fab {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid #141322;
+  color: #FFFFFF;
+  font-size: 1.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 8px 24px var(--primary-glow);
   transition: var(--transition);
 }
 
-.btn-master-play:hover {
-  transform: scale(1.06);
-  box-shadow: 0 6px 24px rgba(14, 165, 233, 0.6);
+.btn-center-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 28px rgba(163, 113, 247, 0.6);
 }
 
-.btn-master-play.paused {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: none;
-  border: 1px solid var(--panel-border);
+.btn-center-fab.is-playing {
+  background: var(--primary);
+  animation: fabPulse 2s infinite;
 }
 
-.master-track-info {
+@keyframes fabPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(163, 113, 247, 0.5); }
+  50% { box-shadow: 0 0 0 12px rgba(163, 113, 247, 0); }
+}
+
+/* ==========================================================================
+   8. Bottom Sheet Quick Drawer (Matching Image 2 Modal Sheet)
+   ========================================================================== */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.quick-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1c1b30;
+  border-top: 1px solid var(--panel-border);
+  border-radius: 28px 28px 0 0;
+  padding: 16px 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
+  z-index: 160;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.6);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.quick-drawer.open {
+  transform: translateY(0);
+}
+
+.drawer-handle-bar {
+  width: 44px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  margin: 0 auto 18px auto;
+}
+
+.drawer-header {
   display: flex;
-  flex-direction: column;
-}
-
-.master-track-status {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text-main);
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 20px;
 }
 
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-  animation: pulseDot 2s infinite;
+.drawer-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
 }
 
-.master-track-sub {
-  font-size: 0.78rem;
+.drawer-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
   color: var(--text-muted);
-}
-
-/* Master Volume */
-.master-center {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  max-width: 320px;
+  justify-content: center;
+}
+
+/* Master controls inside Drawer */
+.drawer-master-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.btn-master-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: none;
+  color: #FFFFFF;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--primary-glow);
+  flex-shrink: 0;
 }
 
 .btn-icon-mute {
   background: transparent;
   border: none;
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   cursor: pointer;
-  transition: var(--transition);
-  padding: 4px;
 }
 
-.btn-icon-mute:hover {
-  color: var(--text-main);
+/* Drawer Action Cards 2-col Grid (Matching Image 2) */
+.drawer-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-/* Master Right Actions */
-.master-right {
+.drawer-action-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-full);
-  color: var(--text-main);
-  font-size: 0.82rem;
-  font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
 }
 
-.pill-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+.drawer-action-card:hover {
+  background: var(--card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.pill-btn.active {
-  background: rgba(56, 189, 248, 0.18);
-  border-color: #38bdf8;
-  color: #7dd3fc;
+.drawer-card-icon {
+  font-size: 1.35rem;
 }
 
-.pill-btn.danger {
-  color: #f87171;
-}
-
-.pill-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+.drawer-card-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #FFFFFF;
 }
 
 /* ==========================================================================
-   Modals & Drawers (Timer, Presets, Save Mix)
+   9. Standard Modals (Timer, Presets, Save Mix)
    ========================================================================== */
 .modal-overlay {
   position: fixed;
@@ -613,9 +1012,9 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 1000;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -631,19 +1030,15 @@ body {
 }
 
 .modal-box {
-  background: #161f30;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-lg);
+  background: #1c1b30;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xl);
+  padding: 26px;
   width: 100%;
   max-width: 500px;
-  padding: 28px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  transform: translateY(20px) scale(0.97);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-overlay.open .modal-box {
-  transform: translateY(0) scale(1);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
 }
 
 .modal-header {
@@ -656,237 +1051,167 @@ body {
 .modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  color: #FFFFFF;
 }
 
 .modal-close {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.08);
   border: none;
-  font-size: 1.4rem;
   color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.3rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition);
 }
 
 .modal-close:hover {
-  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
 }
 
-/* Timer Options Grid */
+/* Primary Button in Modals */
+.btn-primary {
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius-full);
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--primary-glow);
+  transition: var(--transition);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(163, 113, 247, 0.6);
+}
+
 .timer-modes {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
+  background: #141322;
+  padding: 4px;
+  border-radius: var(--radius-full);
 }
 
 .timer-mode-btn {
   flex: 1;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
   color: var(--text-muted);
+  font-size: 0.88rem;
   font-weight: 600;
-  font-size: 0.9rem;
   cursor: pointer;
   transition: var(--transition);
 }
 
 .timer-mode-btn.active {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
-  color: #7dd3fc;
+  background: var(--primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.timer-display-box {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.timer-clock {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
+}
+
+.timer-status-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 6px;
 }
 
 .timer-quick-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .timer-btn {
-  padding: 14px 10px;
+  padding: 12px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
-  color: var(--text-main);
-  font-size: 0.95rem;
+  color: #FFFFFF;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  text-align: center;
   transition: var(--transition);
 }
 
 .timer-btn:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+  color: var(--primary-light);
 }
 
-.timer-display-box {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.timer-clock {
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #38bdf8;
-  font-variant-numeric: tabular-nums;
-}
-
-.timer-status-hint {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.timer-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.btn-block {
-  flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: var(--transition);
-}
-
-.btn-primary {
-  background: #0284c7;
-  color: #fff;
-}
-.btn-primary:hover {
-  background: #0369a1;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main);
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Presets List in Modal */
-.presets-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.preset-card-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.preset-card-item:hover {
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.3);
-}
-
-.preset-card-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.preset-card-icon {
-  font-size: 1.5rem;
-}
-
-.preset-card-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.preset-card-sub {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-/* Toast Notification */
+/* Toast Notice */
 .toast-notice {
   position: fixed;
-  top: 24px;
-  right: 24px;
-  background: rgba(16, 24, 39, 0.92);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #fff;
-  padding: 12px 20px;
+  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1c1b30;
+  border: 1px solid var(--primary);
+  color: #FFFFFF;
+  padding: 12px 22px;
   border-radius: var(--radius-full);
   font-size: 0.88rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 16px var(--primary-glow);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition);
   display: flex;
   align-items: center;
-  gap: 10px;
-  z-index: 2000;
-  transform: translateY(-50px);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
+  gap: 8px;
 }
 
 .toast-notice.show {
-  transform: translateY(0);
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
-/* Animations */
-@keyframes floatSoft {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
-}
-
-@keyframes pulseDot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .master-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+/* ==========================================================================
+   10. Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 600px) {
+  .hero-stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    font-size: 0.75rem;
   }
-  .master-left {
-    justify-content: space-between;
+  .stat-value {
+    font-size: 1.1rem;
   }
-  .master-center {
-    max-width: 100%;
-  }
-  .master-right {
-    justify-content: space-between;
+  .hero-metrics-subcard {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
   .sound-grid {
     grid-template-columns: 1fr;
