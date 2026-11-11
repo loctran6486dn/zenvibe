@@ -437,13 +437,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (channel.isPlaying) {
         const item = SOUND_ITEMS.find(s => s.id === id);
         if (item) {
-          if (['rain', 'water', 'nature'].includes(item.category)) {
+          if (['nature', 'fauna', 'wind_instruments'].includes(item.category)) {
             natActive++;
             natNames.push(item.name);
-          } else if (['urban', 'focus'].includes(item.category)) {
+          } else if (['sound_bath', 'organic_percussion', 'acoustic_strings'].includes(item.category)) {
             spaceActive++;
             spaceNames.push(item.name);
-          } else if (['sleep'].includes(item.category)) {
+          } else if (['space', 'relax'].includes(item.category)) {
             sleepActive++;
             sleepNames.push(item.name);
           }
@@ -452,21 +452,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (metricNatBar) {
-      const pct = natActive > 0 ? Math.min(100, natActive * 35) : 15;
+      const pct = natActive > 0 ? Math.min(100, natActive * 30 + 10) : 15;
       metricNatBar.style.width = `${pct}%`;
-      if (metricNatText) metricNatText.textContent = natNames.length > 0 ? natNames.slice(0, 2).join(' • ') : 'Mưa • Suối • Gió';
+      if (metricNatText) metricNatText.textContent = natNames.length > 0 ? natNames.slice(0, 2).join(' • ') : 'Mưa • Suối • Sáo';
     }
 
     if (metricSpaceBar) {
-      const pct = spaceActive > 0 ? Math.min(100, spaceActive * 45) : 15;
+      const pct = spaceActive > 0 ? Math.min(100, spaceActive * 30 + 10) : 15;
       metricSpaceBar.style.width = `${pct}%`;
-      if (metricSpaceText) metricSpaceText.textContent = spaceNames.length > 0 ? spaceNames.slice(0, 2).join(' • ') : 'Quán cafe • Phím';
+      if (metricSpaceText) metricSpaceText.textContent = spaceNames.length > 0 ? spaceNames.slice(0, 2).join(' • ') : 'Chuông • Hạc • Handpan';
     }
 
     if (metricSleepBar) {
-      const pct = sleepActive > 0 ? Math.min(100, sleepActive * 45) : 15;
+      const pct = sleepActive > 0 ? Math.min(100, sleepActive * 35 + 10) : 15;
       metricSleepBar.style.width = `${pct}%`;
-      if (metricSleepText) metricSleepText.textContent = sleepNames.length > 0 ? sleepNames.slice(0, 2).join(' • ') : 'Nâu • Sấm • Dế';
+      if (metricSleepText) metricSleepText.textContent = sleepNames.length > 0 ? sleepNames.slice(0, 2).join(' • ') : 'Nâu • Cafe • Dế';
     }
   }
 

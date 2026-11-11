@@ -6,10 +6,75 @@
 
 const DEFAULT_PRESETS = [
   {
+    id: 'sound_bath_zen',
+    name: 'Tắm âm thanh Sound Bath',
+    subtitle: 'Chuông xoay Tây Tạng, trống đĩa Handpan và chuông gió Koshi',
+    icon: 'singing_bowl',
+    theme: 'bath',
+    sounds: [
+      { id: 'singing_bowl', volume: 60 },
+      { id: 'handpan', volume: 55 },
+      { id: 'tongue_drum', volume: 50 },
+      { id: 'wind_chimes', volume: 45 }
+    ]
+  },
+  {
+    id: 'bamboo_winds',
+    name: 'Thiền định Sáo trúc & Rừng thu',
+    subtitle: 'Sáo trúc Bansuri, suối chảy và gió luồn qua cành lá xào xạc',
+    icon: 'bamboo_flute',
+    theme: 'bamboo',
+    sounds: [
+      { id: 'bamboo_flute', volume: 60 },
+      { id: 'stream', volume: 55 },
+      { id: 'wind_leaves', volume: 50 },
+      { id: 'birds', volume: 45 }
+    ]
+  },
+  {
+    id: 'peaceful_strings',
+    name: 'Khúc hòa tấu Đàn hạc & Cello',
+    subtitle: 'Đàn hạc Celtic trong vắt, Cello trầm ấm vỗ về giấc ngủ',
+    icon: 'celtic_harp',
+    theme: 'strings',
+    sounds: [
+      { id: 'celtic_harp', volume: 60 },
+      { id: 'warm_cello', volume: 55 },
+      { id: 'rain', volume: 45 },
+      { id: 'rain_roof', volume: 40 }
+    ]
+  },
+  {
+    id: 'temple_mindfulness',
+    name: 'Vườn thiền Mõ & Đàn tranh',
+    subtitle: 'Tiếng mõ gỗ định tâm, Cổ tranh Guzheng và tiếng nước róc rách',
+    icon: 'temple_wood',
+    theme: 'temple',
+    sounds: [
+      { id: 'temple_wood', volume: 50 },
+      { id: 'zen_zither', volume: 55 },
+      { id: 'rivulet', volume: 50 },
+      { id: 'wind_chimes', volume: 40 }
+    ]
+  },
+  {
+    id: 'rainy_guitar_coffee',
+    name: 'Quán quen & Guitar mộc',
+    subtitle: 'Tiếng đàn guitar mộc mạc bên khung cửa sổ chiều mưa rào',
+    icon: 'acoustic_guitar',
+    theme: 'coffee',
+    sounds: [
+      { id: 'acoustic_guitar', volume: 60 },
+      { id: 'rain', volume: 50 },
+      { id: 'coffee_shop', volume: 45 },
+      { id: 'kalimba', volume: 40 }
+    ]
+  },
+  {
     id: 'deep_forest',
     name: 'Rừng chiều an yên',
     subtitle: 'Tiếng suối, chim rừng hót và gió luồn qua cành lá xào xạc',
-    icon: '🌲',
+    icon: 'wind_leaves',
     theme: 'forest',
     sounds: [
       { id: 'stream', volume: 65 },
@@ -19,65 +84,15 @@ const DEFAULT_PRESETS = [
     ]
   },
   {
-    id: 'rainy_coffee',
-    name: 'Góc quán cà phê mưa rơi',
-    subtitle: 'Thư giãn quán quen, ly cà phê ấm và tiếng mưa lách tách',
-    icon: '☕',
-    theme: 'coffee',
-    sounds: [
-      { id: 'coffee_shop', volume: 60 },
-      { id: 'rain', volume: 55 },
-      { id: 'rain_roof', volume: 50 },
-      { id: 'thunder', volume: 35 }
-    ]
-  },
-  {
-    id: 'office_focus',
-    name: 'Tập trung làm việc & Học tập',
-    subtitle: 'Tăng cường hiệu suất, tập trung cao độ giải quyết công việc',
-    icon: '💼',
-    theme: 'office',
-    sounds: [
-      { id: 'office_typing', volume: 55 },
-      { id: 'white_noise', volume: 40 },
-      { id: 'rain', volume: 45 }
-    ]
-  },
-  {
     id: 'deep_sleep',
     name: 'Giấc ngủ sâu & Chữa lành',
     subtitle: 'Tiếng dế rả rích, mưa đêm và tiếng ồn nâu đưa bạn vào giấc ngủ',
-    icon: '🌙',
+    icon: 'moon',
     theme: 'night',
     sounds: [
       { id: 'brown_noise', volume: 65 },
       { id: 'rain_roof', volume: 50 },
       { id: 'crickets', volume: 45 }
-    ]
-  },
-  {
-    id: 'living_room_warmth',
-    name: 'Phòng khách ấm cúng',
-    subtitle: 'Lửa hồng tí tách, đồng hồ tích tắc và tiếng mèo gừ êm ái',
-    icon: '🛋️',
-    theme: 'cozy',
-    sounds: [
-      { id: 'campfire', volume: 60 },
-      { id: 'clock_tick', volume: 45 },
-      { id: 'cat_purr', volume: 55 },
-      { id: 'wind_chimes', volume: 40 }
-    ]
-  },
-  {
-    id: 'nature_meadow',
-    name: 'Đồng cỏ chiều gió lộng',
-    subtitle: 'Cỏ đồng nội lắc lư theo gió thoảng, chim hót bình yên',
-    icon: '🌾',
-    theme: 'meadow',
-    sounds: [
-      { id: 'swaying_grass', volume: 70 },
-      { id: 'wind_leaves', volume: 60 },
-      { id: 'birds', volume: 45 }
     ]
   }
 ];

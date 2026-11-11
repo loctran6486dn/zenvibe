@@ -1237,6 +1237,587 @@ class ZenAudioEngine {
         break;
       }
 
+      // ==========================================
+      // CÁC BỘ TỔNG HỢP NHẠC CỤ THƯ GIÃN MỚI
+      // ==========================================
+
+      // 18. Chuông xoay Tây Tạng (Singing Bowl)
+      case 'singing_bowl': {
+        let isAlive = true;
+        // Drone nền ngân vang tần số 216Hz, 432Hz (Tần số chữa lành)
+        const freqs = [216, 432, 648, 864];
+        const oscs = [];
+        const baseGain = ctx.createGain();
+        baseGain.gain.setValueAtTime(0.04, ctx.currentTime);
+        baseGain.connect(outNode);
+
+        // LFO tạo hiệu ứng ngân rung (beating / tremolo)
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(0.25, ctx.currentTime);
+        lfoGain.gain.setValueAtTime(0.02, ctx.currentTime);
+        lfo.connect(lfoGain.gain);
+        lfo.start();
+        cleanups.push(() => { try { lfo.stop(); } catch (e) {} });
+
+        freqs.forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          // Detune nhẹ tạo độ ngân tự nhiên
+          osc.frequency.setValueAtTime(f + (idx === 1 ? 0.3 : -0.2), ctx.currentTime);
+          g.gain.setValueAtTime(idx === 0 ? 0.05 : (0.03 / (idx + 1)), ctx.currentTime);
+          osc.connect(g);
+          g.connect(baseGain);
+          osc.start();
+          oscs.push(osc);
+        });
+        cleanups.push(() => oscs.forEach(o => { try { o.stop(); } catch (e) {} }));
+
+        // Tiếng gõ chày nỉ lên chuông định kỳ
+        const strikeBowl = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const strikeOsc = ctx.createOscillator();
+          const strikeGain = ctx.createGain();
+          const f = freqs[Math.random() < 0.6 ? 1 : 0];
+
+          strikeOsc.type = 'sine';
+          strikeOsc.frequency.setValueAtTime(f, ctx.currentTime);
+
+          const startT = ctx.currentTime;
+          strikeGain.gain.setValueAtTime(0.12, startT);
+          strikeGain.gain.exponentialRampToValueAtTime(0.0001, startT + 6.5);
+
+          strikeOsc.connect(strikeGain);
+          strikeGain.connect(outNode);
+
+          strikeOsc.start(startT);
+          strikeOsc.stop(startT + 6.8);
+
+          const nextInterval = 7000 + Math.random() * 4000;
+          timeoutId = setTimeout(strikeBowl, nextInterval);
+        };
+        let timeoutId = setTimeout(strikeBowl, 1500);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 19. Trống đĩa Handpan
+      case 'handpan': {
+        let isAlive = true;
+        // Thang âm D Kurd thiền định
+        const notes = [146.83, 220.00, 233.08, 261.63, 293.66, 329.63, 349.23, 440.00];
+
+        const strikeHandpan = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const strikes = Math.floor(Math.random() * 2) + 1;
+          for (let i = 0; i < strikes; i++) {
+            const freq = notes[Math.floor(Math.random() * notes.length)];
+            const startT = ctx.currentTime + i * 0.35;
+
+            // Nốt chính
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startT);
+
+            // Bồi âm kim loại ấm
+            const oscHarm = ctx.createOscillator();
+            const gainHarm = ctx.createGain();
+            oscHarm.type = 'triangle';
+            oscHarm.frequency.setValueAtTime(freq * 2, startT);
+
+            // Tiếng vỗ nhẹ của ngón tay (thump)
+            const thump = ctx.createOscillator();
+            const thumpGain = ctx.createGain();
+            thump.frequency.setValueAtTime(110, startT);
+            thump.frequency.exponentialRampToValueAtTime(45, startT + 0.08);
+
+            thumpGain.gain.setValueAtTime(0.08, startT);
+            thumpGain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.08);
+
+            gain.gain.setValueAtTime(0.12, startT);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 3.2);
+
+            gainHarm.gain.setValueAtTime(0.04, startT);
+            gainHarm.gain.exponentialRampToValueAtTime(0.0001, startT + 1.8);
+
+            osc.connect(gain);
+            gain.connect(outNode);
+            oscHarm.connect(gainHarm);
+            gainHarm.connect(outNode);
+            thump.connect(thumpGain);
+            thumpGain.connect(outNode);
+
+            osc.start(startT);
+            osc.stop(startT + 3.4);
+            oscHarm.start(startT);
+            oscHarm.stop(startT + 2.0);
+            thump.start(startT);
+            thump.stop(startT + 0.1);
+          }
+
+          const nextInterval = 2500 + Math.random() * 3200;
+          timeoutId = setTimeout(strikeHandpan, nextInterval);
+        };
+        let timeoutId = setTimeout(strikeHandpan, 1200);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 20. Trống lưỡi thép Tongue Drum
+      case 'tongue_drum': {
+        let isAlive = true;
+        const notes = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+
+        const strikeTongue = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const freq = notes[Math.floor(Math.random() * notes.length)];
+          const startT = ctx.currentTime;
+
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startT);
+
+          gain.gain.setValueAtTime(0.001, startT);
+          gain.gain.linearRampToValueAtTime(0.12, startT + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startT + 3.8);
+
+          osc.connect(gain);
+          gain.connect(outNode);
+
+          osc.start(startT);
+          osc.stop(startT + 4.0);
+
+          const nextInterval = 2200 + Math.random() * 3000;
+          timeoutId = setTimeout(strikeTongue, nextInterval);
+        };
+        let timeoutId = setTimeout(strikeTongue, 1000);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 21. Đàn Kalimba
+      case 'kalimba': {
+        let isAlive = true;
+        const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 987.77, 1046.50, 1174.66, 1318.51];
+
+        const playKalimba = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const numNotes = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < numNotes; i++) {
+            const freq = notes[Math.floor(Math.random() * notes.length)];
+            const startT = ctx.currentTime + i * 0.22;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startT);
+
+            // Bồi âm phím gỗ
+            const tineOsc = ctx.createOscillator();
+            const tineGain = ctx.createGain();
+            tineOsc.type = 'triangle';
+            tineOsc.frequency.setValueAtTime(freq * 3, startT);
+
+            gain.gain.setValueAtTime(0.11, startT);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 1.8);
+
+            tineGain.gain.setValueAtTime(0.03, startT);
+            tineGain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.15);
+
+            osc.connect(gain);
+            gain.connect(outNode);
+            tineOsc.connect(tineGain);
+            tineGain.connect(outNode);
+
+            osc.start(startT);
+            osc.stop(startT + 2.0);
+            tineOsc.start(startT);
+            tineOsc.stop(startT + 0.2);
+          }
+
+          const nextInterval = 2800 + Math.random() * 3500;
+          timeoutId = setTimeout(playKalimba, nextInterval);
+        };
+        let timeoutId = setTimeout(playKalimba, 1000);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 22. Mõ thiền & Chày gỗ (Temple Woodblock)
+      case 'temple_wood': {
+        let isAlive = true;
+        const strikeWood = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const filter = ctx.createBiquadFilter();
+
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(620, ctx.currentTime);
+          filter.Q.setValueAtTime(6.0, ctx.currentTime);
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(360, ctx.currentTime + 0.06);
+
+          const startT = ctx.currentTime;
+          gain.gain.setValueAtTime(0.22, startT);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.25);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(outNode);
+
+          osc.start(startT);
+          osc.stop(startT + 0.3);
+
+          const nextInterval = 3200 + Math.random() * 2000;
+          timeoutId = setTimeout(strikeWood, nextInterval);
+        };
+        let timeoutId = setTimeout(strikeWood, 1500);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 23. Ống mưa & Hạt gỗ Shaker (Rainstick)
+      case 'rainstick': {
+        const pinkSrc = this._createNoiseSource(this.noiseBuffers.pink);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2600, ctx.currentTime);
+        filter.Q.setValueAtTime(2.2, ctx.currentTime);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+
+        // LFO tạo nhịp trượt đổ hạt
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(0.12, ctx.currentTime);
+        lfoGain.gain.setValueAtTime(0.06, ctx.currentTime);
+        lfo.connect(lfoGain.gain);
+        lfo.start();
+        cleanups.push(() => { try { lfo.stop(); } catch (e) {} });
+
+        pinkSrc.connect(filter);
+        filter.connect(gain);
+        gain.connect(outNode);
+        pinkSrc.start();
+        cleanups.push(() => pinkSrc.stop());
+        break;
+      }
+
+      // 24. Đàn hạc Celtic Harp
+      case 'celtic_harp': {
+        let isAlive = true;
+        const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
+
+        const playHarp = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const count = Math.floor(Math.random() * 4) + 2;
+          for (let i = 0; i < count; i++) {
+            const freq = notes[Math.floor(Math.random() * notes.length)];
+            const startT = ctx.currentTime + i * 0.28;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2600, startT);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startT);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.11, startT + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 2.8);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(outNode);
+
+            osc.start(startT);
+            osc.stop(startT + 3.0);
+          }
+
+          const nextInterval = 3500 + Math.random() * 3500;
+          timeoutId = setTimeout(playHarp, nextInterval);
+        };
+        let timeoutId = setTimeout(playHarp, 1200);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 25. Guitar mộc Fingerstyle
+      case 'acoustic_guitar': {
+        let isAlive = true;
+        const chords = [
+          [164.81, 196.00, 246.94, 329.63], // Em
+          [174.61, 220.00, 261.63, 349.23], // Fmaj7
+          [196.00, 246.94, 293.66, 392.00], // G
+          [220.00, 261.63, 329.63, 440.00]  // Am
+        ];
+
+        const playGuitar = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const chord = chords[Math.floor(Math.random() * chords.length)];
+          chord.forEach((freq, idx) => {
+            const startT = ctx.currentTime + idx * 0.18;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1400, startT);
+            filter.frequency.exponentialRampToValueAtTime(600, startT + 1.5);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startT);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.12, startT + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 2.2);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(outNode);
+
+            osc.start(startT);
+            osc.stop(startT + 2.4);
+          });
+
+          const nextInterval = 3200 + Math.random() * 3000;
+          timeoutId = setTimeout(playGuitar, nextInterval);
+        };
+        let timeoutId = setTimeout(playGuitar, 1000);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 26. Đàn Cổ tranh Guzheng
+      case 'zen_zither': {
+        let isAlive = true;
+        const notes = [220.00, 246.94, 293.66, 329.63, 440.00, 493.88, 587.33, 659.25];
+
+        const playZither = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const count = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < count; i++) {
+            const freq = notes[Math.floor(Math.random() * notes.length)];
+            const startT = ctx.currentTime + i * 0.32;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startT);
+            // Nhấn nhá rung dây đặc trưng đàn tranh
+            osc.frequency.linearRampToValueAtTime(freq * 1.02, startT + 0.12);
+            osc.frequency.linearRampToValueAtTime(freq, startT + 0.3);
+
+            gain.gain.setValueAtTime(0.13, startT);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 2.5);
+
+            osc.connect(gain);
+            gain.connect(outNode);
+
+            osc.start(startT);
+            osc.stop(startT + 2.7);
+          }
+
+          const nextInterval = 2800 + Math.random() * 3500;
+          timeoutId = setTimeout(playZither, nextInterval);
+        };
+        let timeoutId = setTimeout(playZither, 1200);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 27. Cello trầm ấm
+      case 'warm_cello': {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(98.00, ctx.currentTime); // G2
+
+        // Vibrato chậm ấm áp
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(4.2, ctx.currentTime);
+        lfoGain.gain.setValueAtTime(1.8, ctx.currentTime);
+        lfo.connect(osc.frequency);
+        lfo.start();
+        cleanups.push(() => { try { lfo.stop(); } catch (e) {} });
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(260, ctx.currentTime);
+        filter.Q.setValueAtTime(2.0, ctx.currentTime);
+
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(outNode);
+
+        osc.start();
+        cleanups.push(() => { try { osc.stop(); } catch (e) {} });
+        break;
+      }
+
+      // 28. Sáo trúc thiền Bansuri
+      case 'bamboo_flute': {
+        let isAlive = true;
+        const notes = [440.00, 493.88, 554.37, 659.25, 739.99];
+
+        const playFlute = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const freq = notes[Math.floor(Math.random() * notes.length)];
+          const startT = ctx.currentTime;
+          const dur = 3.2;
+
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startT);
+
+          // Rung hơi (vibrato)
+          const lfo = ctx.createOscillator();
+          const lfoGain = ctx.createGain();
+          lfo.frequency.setValueAtTime(5.0, startT);
+          lfoGain.gain.setValueAtTime(2.5, startT);
+          lfo.connect(osc.frequency);
+          lfo.start(startT);
+          lfo.stop(startT + dur);
+
+          // Tiếng hơi thở sáo trúc (breath noise)
+          const breathSrc = this._createNoiseSource(this.noiseBuffers.pink);
+          const breathFilter = ctx.createBiquadFilter();
+          const breathGain = ctx.createGain();
+          breathFilter.type = 'bandpass';
+          breathFilter.frequency.setValueAtTime(freq * 1.5, startT);
+          breathFilter.Q.setValueAtTime(3.0, startT);
+
+          breathGain.gain.setValueAtTime(0.001, startT);
+          breathGain.gain.linearRampToValueAtTime(0.025, startT + 0.4);
+          breathGain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+          breathSrc.connect(breathFilter);
+          breathFilter.connect(breathGain);
+          breathGain.connect(outNode);
+          breathSrc.start(startT);
+          breathSrc.stop(startT + dur);
+
+          gain.gain.setValueAtTime(0.001, startT);
+          gain.gain.linearRampToValueAtTime(0.12, startT + 0.35);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+          osc.connect(gain);
+          gain.connect(outNode);
+
+          osc.start(startT);
+          osc.stop(startT + dur + 0.1);
+
+          const nextInterval = 4200 + Math.random() * 3500;
+          timeoutId = setTimeout(playFlute, nextInterval);
+        };
+        let timeoutId = setTimeout(playFlute, 1000);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 29. Sáo đất Ocarina
+      case 'ocarina': {
+        let isAlive = true;
+        const notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00];
+
+        const playOcarina = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const freq = notes[Math.floor(Math.random() * notes.length)];
+          const startT = ctx.currentTime;
+          const dur = 2.6;
+
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startT);
+
+          gain.gain.setValueAtTime(0.001, startT);
+          gain.gain.linearRampToValueAtTime(0.11, startT + 0.18);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+          osc.connect(gain);
+          gain.connect(outNode);
+
+          osc.start(startT);
+          osc.stop(startT + dur + 0.1);
+
+          const nextInterval = 3200 + Math.random() * 3000;
+          timeoutId = setTimeout(playOcarina, nextInterval);
+        };
+        let timeoutId = setTimeout(playOcarina, 1200);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
+      // 30. Sáo sậy Pan Flute
+      case 'pan_flute': {
+        let isAlive = true;
+        const notes = [587.33, 659.25, 783.99, 880.00, 1046.50];
+
+        const playPan = () => {
+          if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
+          const freq = notes[Math.floor(Math.random() * notes.length)];
+          const startT = ctx.currentTime;
+          const dur = 2.4;
+
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startT);
+
+          // Tiếng thở ống tre đặc trưng (pipe chiff)
+          const chiffSrc = this._createNoiseSource(this.noiseBuffers.pink);
+          const chiffFilter = ctx.createBiquadFilter();
+          const chiffGain = ctx.createGain();
+
+          chiffFilter.type = 'bandpass';
+          chiffFilter.frequency.setValueAtTime(freq * 1.2, startT);
+
+          chiffGain.gain.setValueAtTime(0.04, startT);
+          chiffGain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.12);
+
+          chiffSrc.connect(chiffFilter);
+          chiffFilter.connect(chiffGain);
+          chiffGain.connect(outNode);
+          chiffSrc.start(startT);
+          chiffSrc.stop(startT + 0.15);
+
+          gain.gain.setValueAtTime(0.001, startT);
+          gain.gain.linearRampToValueAtTime(0.12, startT + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+          osc.connect(gain);
+          gain.connect(outNode);
+
+          osc.start(startT);
+          osc.stop(startT + dur + 0.1);
+
+          const nextInterval = 3000 + Math.random() * 3200;
+          timeoutId = setTimeout(playPan, nextInterval);
+        };
+        let timeoutId = setTimeout(playPan, 1000);
+        cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
+        break;
+      }
+
       default: {
         const pinkSrc = this._createNoiseSource(this.noiseBuffers.pink);
         pinkSrc.connect(outNode);
