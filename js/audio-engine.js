@@ -1598,40 +1598,68 @@ class ZenAudioEngine {
         break;
       }
 
-      // 26. Đàn Cổ tranh Guzheng
+      // 26. Đàn Cổ tranh Guzheng (Zen Zither)
       case 'zen_zither': {
         let isAlive = true;
-        const notes = [220.00, 246.94, 293.66, 329.63, 440.00, 493.88, 587.33, 659.25];
+        // Thang âm ngũ cung phương Đông D Major (D4, E4, F#4, A4, B4, D5)
+        const notes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33];
 
         const playZither = () => {
           if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
-          const count = Math.floor(Math.random() * 3) + 1;
+          const count = Math.floor(Math.random() * 2) + 1;
           for (let i = 0; i < count; i++) {
             const freq = notes[Math.floor(Math.random() * notes.length)];
-            const startT = ctx.currentTime + i * 0.32;
+            const startT = ctx.currentTime + i * 0.36;
 
             const osc = ctx.createOscillator();
+            const harmOsc = ctx.createOscillator();
+            const warmFilter = ctx.createBiquadFilter();
             const gain = ctx.createGain();
-            osc.type = 'sine';
+            const harmGain = ctx.createGain();
+
+            warmFilter.type = 'lowpass';
+            warmFilter.frequency.setValueAtTime(2400, startT);
+            warmFilter.frequency.exponentialRampToValueAtTime(650, startT + 2.5);
+
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, startT);
-            // Nhấn nhá rung dây đặc trưng đàn tranh
-            osc.frequency.linearRampToValueAtTime(freq * 1.02, startT + 0.12);
-            osc.frequency.linearRampToValueAtTime(freq, startT + 0.3);
 
-            gain.gain.setValueAtTime(0.13, startT);
-            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 2.5);
+            harmOsc.type = 'sine';
+            harmOsc.frequency.setValueAtTime(freq * 2, startT);
 
-            osc.connect(gain);
+            // Nhấn nhá rung dây đặc trưng đàn tranh (tinh tế, mượt mà)
+            osc.frequency.setValueAtTime(freq, startT + 0.15);
+            osc.frequency.linearRampToValueAtTime(freq * 1.018, startT + 0.42);
+            osc.frequency.linearRampToValueAtTime(freq, startT + 0.75);
+
+            harmOsc.frequency.setValueAtTime(freq * 2, startT + 0.15);
+            harmOsc.frequency.linearRampToValueAtTime(freq * 2 * 1.018, startT + 0.42);
+            harmOsc.frequency.linearRampToValueAtTime(freq * 2, startT + 0.75);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.12, startT + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startT + 3.2);
+
+            harmGain.gain.setValueAtTime(0.001, startT);
+            harmGain.gain.linearRampToValueAtTime(0.04, startT + 0.02);
+            harmGain.gain.exponentialRampToValueAtTime(0.0001, startT + 1.8);
+
+            osc.connect(warmFilter);
+            harmOsc.connect(harmGain);
+            harmGain.connect(warmFilter);
+            warmFilter.connect(gain);
             gain.connect(outNode);
 
             osc.start(startT);
-            osc.stop(startT + 2.7);
+            osc.stop(startT + 3.4);
+            harmOsc.start(startT);
+            harmOsc.stop(startT + 2.0);
           }
 
-          const nextInterval = 2800 + Math.random() * 3500;
+          const nextInterval = 3200 + Math.random() * 3000;
           timeoutId = setTimeout(playZither, nextInterval);
         };
-        let timeoutId = setTimeout(playZither, 1200);
+        let timeoutId = setTimeout(playZither, 1000);
         cleanups.push(() => { isAlive = false; clearTimeout(timeoutId); });
         break;
       }

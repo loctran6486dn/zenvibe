@@ -79,6 +79,115 @@ def normalize_and_export(left, right, filename):
 
 
 # =========================================================================
+# DSP UTILITIES & ACOUSTIC FILTER CLASSES
+# =========================================================================
+
+class PinkNoise:
+    def __init__(self):
+        self.b0 = self.b1 = self.b2 = self.b3 = self.b4 = self.b5 = self.b6 = 0.0
+    def tick(self):
+        w = random.random() * 2 - 1
+        self.b0 = 0.99886 * self.b0 + w * 0.0555179
+        self.b1 = 0.99332 * self.b1 + w * 0.0750759
+        self.b2 = 0.96900 * self.b2 + w * 0.1538520
+        self.b3 = 0.86650 * self.b3 + w * 0.3104856
+        self.b4 = 0.55000 * self.b4 + w * 0.5329522
+        self.b5 = -0.7616 * self.b5 - w * 0.0168980
+        p = self.b0 + self.b1 + self.b2 + self.b3 + self.b4 + self.b5 + self.b6 + w * 0.5362
+        self.b6 = w * 0.115926
+        return p * 0.11
+
+class ResonantBP:
+    def __init__(self, f0, Q, sample_rate=44100):
+        w0 = 2.0 * math.pi * f0 / sample_rate
+        alpha = math.sin(w0) / (2.0 * Q)
+        b0 = alpha
+        b1 = 0.0
+        b2 = -alpha
+        a0 = 1.0 + alpha
+        a1 = -2.0 * math.cos(w0)
+        a2 = 1.0 - alpha
+        self.b0 = b0 / a0
+        self.b1 = b1 / a0
+        self.b2 = b2 / a0
+        self.a1 = a1 / a0
+        self.a2 = a2 / a0
+        self.x1 = self.x2 = self.y1 = self.y2 = 0.0
+    def tick(self, x):
+        y = self.b0 * x + self.b1 * self.x1 + self.b2 * self.x2 - self.a1 * self.y1 - self.a2 * self.y2
+        self.x2 = self.x1
+        self.x1 = x
+        self.y2 = self.y1
+        self.y1 = y
+        return y
+
+class LowPassFilter:
+    def __init__(self, cutoff, sample_rate=44100):
+        w0 = 2.0 * math.pi * cutoff / sample_rate
+        self.alpha = w0 / (1.0 + w0)
+        self.y = 0.0
+    def tick(self, x):
+        self.y += self.alpha * (x - self.y)
+        return self.y
+
+class StereoReverb:
+    def __init__(self):
+        combs_l = [1116, 1188, 1277, 1356]
+        combs_r = [1139, 1211, 1300, 1379]
+        self.combs_l = [[0.0] * d for d in combs_l]
+        self.combs_r = [[0.0] * d for d in combs_r]
+        self.indices_l = [0] * 4
+        self.indices_r = [0] * 4
+        self.damp_l = [0.0] * 4
+        self.damp_r = [0.0] * 4
+        self.feedback = 0.84
+        self.damp = 0.38
+        
+        allpass_l = [556, 441]
+        allpass_r = [579, 464]
+        self.ap_l = [[0.0] * d for d in allpass_l]
+        self.ap_r = [[0.0] * d for d in allpass_r]
+        self.ap_idx_l = [0] * 2
+        self.ap_idx_r = [0] * 2
+        self.ap_feedback = 0.5
+        
+    def process(self, in_l, in_r):
+        out_l = 0.0
+        out_r = 0.0
+        for i in range(4):
+            idx_l = self.indices_l[i]
+            idx_r = self.indices_r[i]
+            buf_l = self.combs_l[i]
+            buf_r = self.combs_r[i]
+            dl = buf_l[idx_l]
+            dr = buf_r[idx_r]
+            self.damp_l[i] = dl * (1.0 - self.damp) + self.damp_l[i] * self.damp
+            self.damp_r[i] = dr * (1.0 - self.damp) + self.damp_r[i] * self.damp
+            buf_l[idx_l] = in_l + self.damp_l[i] * self.feedback
+            buf_r[idx_r] = in_r + self.damp_r[i] * self.feedback
+            self.indices_l[i] = (idx_l + 1) % len(buf_l)
+            self.indices_r[i] = (idx_r + 1) % len(buf_r)
+            out_l += dl
+            out_r += dr
+        out_l *= 0.25
+        out_r *= 0.25
+        for i in range(2):
+            idx_l = self.ap_idx_l[i]
+            idx_r = self.ap_idx_r[i]
+            buf_l = self.ap_l[i]
+            buf_r = self.ap_r[i]
+            bufout_l = buf_l[idx_l]
+            bufout_r = buf_r[idx_r]
+            buf_l[idx_l] = out_l + bufout_l * self.ap_feedback
+            buf_r[idx_r] = out_r + bufout_r * self.ap_feedback
+            out_l = -out_l * self.ap_feedback + bufout_l * (1.0 - self.ap_feedback * self.ap_feedback)
+            out_r = -out_r * self.ap_feedback + bufout_r * (1.0 - self.ap_feedback * self.ap_feedback)
+            self.ap_idx_l[i] = (idx_l + 1) % len(buf_l)
+            self.ap_idx_r[i] = (idx_r + 1) % len(buf_r)
+        return out_l, out_r
+
+
+# =========================================================================
 # 1. GROUP 1: AMBIENT & SOUND BATH
 # =========================================================================
 
@@ -418,150 +527,75 @@ def gen_acoustic_guitar():
 
 
 def gen_zen_zither():
-    """Zen Guzheng / Koto zither with silk string plucks and gentle pitch bends."""
+    """Zen Guzheng / Koto zither: Authentic silk string plucks, traditional left-hand bend (Yin/Rou), and stereo hall resonance."""
     left = [0.0] * TOTAL_SAMPLES
     right = [0.0] * TOTAL_SAMPLES
     
+    # Traditional Chinese Pentatonic scale (Yu / Gong / Shang / Jiao / Zhi) in D
+    # (start_t, freq, pan_l, pan_r, bend_cents, has_vibrato)
     plucks = [
-        (0.6, 293.66, 0.7, 0.5),   # D4
-        (3.5, 329.63, 0.5, 0.8),   # E4
-        (6.8, 369.99, 0.8, 0.4),   # F#4
-        (10.2, 440.00, 0.4, 0.8),  # A4
-        (14.0, 220.00, 0.6, 0.6),  # A3 (deep)
-        (17.5, 293.66, 0.8, 0.4),  # D4
-        (20.8, 493.88, 0.4, 0.8),  # B4
-        (24.2, 440.00, 0.6, 0.6)   # A4
+        (1.0,  293.66, 0.65, 0.55, 20.0, True),   # D4
+        (4.2,  329.63, 0.50, 0.70, 15.0, False),  # E4
+        (7.5,  369.99, 0.75, 0.45, 25.0, True),   # F#4
+        (11.0, 440.00, 0.45, 0.75, 18.0, True),   # A4
+        (14.5, 146.83, 0.60, 0.60,  0.0, False),  # D3 (deep bass resonance)
+        (17.8, 220.00, 0.70, 0.50, 12.0, False),  # A3
+        (20.8, 293.66, 0.50, 0.70, 22.0, True),   # D4
+        (23.8, 493.88, 0.75, 0.45, 15.0, True),   # B4
+        (26.2, 440.00, 0.60, 0.60, 10.0, True)    # A4 (serene resolution)
     ]
     
-    for st, f0, pl, pr in plucks:
+    two_pi = 2.0 * math.pi
+    dt = 1.0 / SAMPLE_RATE
+    rb = StereoReverb()
+    lp = LowPassFilter(2200.0, SAMPLE_RATE)
+    
+    for st, f0, pl, pr, max_bend, has_vib in plucks:
         start_idx = int(st * SAMPLE_RATE)
-        for i in range(start_idx, TOTAL_SAMPLES):
-            dt = (i - start_idx) / SAMPLE_RATE
-            if dt > 4.8: break
+        end_idx = min(TOTAL_SAMPLES, int((st + 5.2) * SAMPLE_RATE))
+        
+        phase = 0.0
+        vib_phase = 0.0
+        
+        for i in range(start_idx, end_idx):
+            t_note = (i - start_idx) * dt
             
-            # Characteristic Guzheng left-hand bend
-            bend = 1.0 + 0.04 * math.sin(2 * math.pi * 3.5 * dt) if dt > 0.4 else 1.0
-            cur_f = f0 * bend
+            # Left-hand graceful pitch bend (Yin/An - pressing string behind bridge)
+            bend_cents = 0.0
+            if 0.15 < t_note < 0.75 and max_bend > 0:
+                bend_cents = max_bend * math.sin((t_note - 0.15) / 0.60 * math.pi)
+                
+            # Subtle lingering vibrato after bend
+            vib_cents = 0.0
+            if t_note > 0.75 and has_vib:
+                vib_phase += two_pi * 4.0 * dt
+                vib_decay = math.exp(-(t_note - 0.75) / 2.5)
+                vib_cents = 8.0 * vib_decay * math.sin(vib_phase)
+                
+            cur_f = f0 * (2.0 ** ((bend_cents + vib_cents) / 1200.0))
+            phase += two_pi * cur_f * dt
+            if phase > two_pi:
+                phase -= two_pi * math.floor(phase / two_pi)
+                
+            # Silk string harmonic decay (higher harmonics decay faster)
+            s1 = math.sin(phase) * math.exp(-t_note / 3.4)
+            s2 = math.sin(2.0 * phase) * 0.32 * math.exp(-t_note / 2.0)
+            s3 = math.sin(3.0 * phase) * 0.14 * math.exp(-t_note / 1.3)
+            s4 = math.sin(4.0 * phase) * 0.05 * math.exp(-t_note / 0.8)
             
-            s1 = math.sin(2 * math.pi * cur_f * dt) * math.exp(-dt / 3.2)
-            s2 = math.sin(2 * math.pi * cur_f * 2.0 * dt) * 0.35 * math.exp(-dt / 2.0)
-            s3 = math.sin(2 * math.pi * cur_f * 3.0 * dt) * 0.15 * math.exp(-dt / 1.2)
-            plectrum = math.exp(-dt / 0.006) * 0.3 * (random.random() * 2 - 1)
+            # Soft wooden fingernail pluck transient (lowpass filtered, 15ms decay)
+            pluck_snap = lp.tick(random.random() * 2 - 1) * 0.08 * math.exp(-t_note / 0.015)
             
-            val = (s1 + s2 + s3 + plectrum)
-            left[i] += val * pl
-            right[i] += val * pr
+            # Paulownia soundboard resonance
+            body = math.sin(two_pi * 185.0 * t_note) * 0.12 * math.exp(-t_note / 0.25)
+            
+            dry = s1 + s2 + s3 + s4 + pluck_snap + body
+            rev_l, rev_r = rb.process(dry * 0.45 * pl, dry * 0.45 * pr)
+            
+            left[i] += (dry * pl * 0.68 + rev_l * 0.32)
+            right[i] += (dry * pr * 0.68 + rev_r * 0.32)
             
     return apply_seamless_loop(left, right)
-
-
-# =========================================================================
-# DSP UTILITIES & ACOUSTIC FILTER CLASSES
-# =========================================================================
-
-class PinkNoise:
-    def __init__(self):
-        self.b0 = self.b1 = self.b2 = self.b3 = self.b4 = self.b5 = self.b6 = 0.0
-    def tick(self):
-        w = random.random() * 2 - 1
-        self.b0 = 0.99886 * self.b0 + w * 0.0555179
-        self.b1 = 0.99332 * self.b1 + w * 0.0750759
-        self.b2 = 0.96900 * self.b2 + w * 0.1538520
-        self.b3 = 0.86650 * self.b3 + w * 0.3104856
-        self.b4 = 0.55000 * self.b4 + w * 0.5329522
-        self.b5 = -0.7616 * self.b5 - w * 0.0168980
-        p = self.b0 + self.b1 + self.b2 + self.b3 + self.b4 + self.b5 + self.b6 + w * 0.5362
-        self.b6 = w * 0.115926
-        return p * 0.11
-
-class ResonantBP:
-    def __init__(self, f0, Q, sample_rate=44100):
-        w0 = 2.0 * math.pi * f0 / sample_rate
-        alpha = math.sin(w0) / (2.0 * Q)
-        b0 = alpha
-        b1 = 0.0
-        b2 = -alpha
-        a0 = 1.0 + alpha
-        a1 = -2.0 * math.cos(w0)
-        a2 = 1.0 - alpha
-        self.b0 = b0 / a0
-        self.b1 = b1 / a0
-        self.b2 = b2 / a0
-        self.a1 = a1 / a0
-        self.a2 = a2 / a0
-        self.x1 = self.x2 = self.y1 = self.y2 = 0.0
-    def tick(self, x):
-        y = self.b0 * x + self.b1 * self.x1 + self.b2 * self.x2 - self.a1 * self.y1 - self.a2 * self.y2
-        self.x2 = self.x1
-        self.x1 = x
-        self.y2 = self.y1
-        self.y1 = y
-        return y
-
-class LowPassFilter:
-    def __init__(self, cutoff, sample_rate=44100):
-        w0 = 2.0 * math.pi * cutoff / sample_rate
-        self.alpha = w0 / (1.0 + w0)
-        self.y = 0.0
-    def tick(self, x):
-        self.y += self.alpha * (x - self.y)
-        return self.y
-
-class StereoReverb:
-    def __init__(self):
-        combs_l = [1116, 1188, 1277, 1356]
-        combs_r = [1139, 1211, 1300, 1379]
-        self.combs_l = [[0.0] * d for d in combs_l]
-        self.combs_r = [[0.0] * d for d in combs_r]
-        self.indices_l = [0] * 4
-        self.indices_r = [0] * 4
-        self.damp_l = [0.0] * 4
-        self.damp_r = [0.0] * 4
-        self.feedback = 0.84
-        self.damp = 0.38
-        
-        allpass_l = [556, 441]
-        allpass_r = [579, 464]
-        self.ap_l = [[0.0] * d for d in allpass_l]
-        self.ap_r = [[0.0] * d for d in allpass_r]
-        self.ap_idx_l = [0] * 2
-        self.ap_idx_r = [0] * 2
-        self.ap_feedback = 0.5
-        
-    def process(self, in_l, in_r):
-        out_l = 0.0
-        out_r = 0.0
-        for i in range(4):
-            idx_l = self.indices_l[i]
-            idx_r = self.indices_r[i]
-            buf_l = self.combs_l[i]
-            buf_r = self.combs_r[i]
-            dl = buf_l[idx_l]
-            dr = buf_r[idx_r]
-            self.damp_l[i] = dl * (1.0 - self.damp) + self.damp_l[i] * self.damp
-            self.damp_r[i] = dr * (1.0 - self.damp) + self.damp_r[i] * self.damp
-            buf_l[idx_l] = in_l + self.damp_l[i] * self.feedback
-            buf_r[idx_r] = in_r + self.damp_r[i] * self.feedback
-            self.indices_l[i] = (idx_l + 1) % len(buf_l)
-            self.indices_r[i] = (idx_r + 1) % len(buf_r)
-            out_l += dl
-            out_r += dr
-        out_l *= 0.25
-        out_r *= 0.25
-        for i in range(2):
-            idx_l = self.ap_idx_l[i]
-            idx_r = self.ap_idx_r[i]
-            buf_l = self.ap_l[i]
-            buf_r = self.ap_r[i]
-            bufout_l = buf_l[idx_l]
-            bufout_r = buf_r[idx_r]
-            buf_l[idx_l] = out_l + bufout_l * self.ap_feedback
-            buf_r[idx_r] = out_r + bufout_r * self.ap_feedback
-            out_l = -out_l * self.ap_feedback + bufout_l * (1.0 - self.ap_feedback * self.ap_feedback)
-            out_r = -out_r * self.ap_feedback + bufout_r * (1.0 - self.ap_feedback * self.ap_feedback)
-            self.ap_idx_l[i] = (idx_l + 1) % len(buf_l)
-            self.ap_idx_r[i] = (idx_r + 1) % len(buf_r)
-        return out_l, out_r
 
 
 def gen_warm_cello():
@@ -822,7 +856,8 @@ def gen_pan_flute():
 # =========================================================================
 
 def main():
-    print("Beginning high-fidelity synthesis for 12 new relaxing instruments...")
+    import sys
+    print("Beginning high-fidelity synthesis for relaxing instruments...")
     
     generators = [
         # Group 1: Sound Bath
@@ -847,12 +882,19 @@ def main():
         ("pan_flute_seamless", gen_pan_flute)
     ]
     
+    if len(sys.argv) > 1:
+        target = sys.argv[1].lower()
+        generators = [g for g in generators if target in g[0].lower()]
+        if not generators:
+            print(f"No generator matched '{sys.argv[1]}'")
+            return
+            
     for filename, gen_fn in generators:
         print(f"Synthesizing {filename}...")
         l, r = gen_fn()
         normalize_and_export(l, r, filename)
         
-    print("ALL 12 RELAXING INSTRUMENTS GENERATED SUCCESSFULLY!")
+    print("GENERATION COMPLETED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     main()
