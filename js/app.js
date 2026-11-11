@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mở khóa âm thanh tức thì trên iOS Safari & Android Chrome khi chạm lần đầu
   const unlockMobileAudio = () => {
     engine.initContext();
+    const shield = document.getElementById('bgShieldAudio');
+    if (shield && shield.paused) {
+      shield.play().catch(e => console.warn('bgShield unlock error:', e));
+    }
     document.removeEventListener('touchstart', unlockMobileAudio);
     document.removeEventListener('click', unlockMobileAudio);
   };
@@ -46,8 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Tự động khôi phục AudioContext khi người dùng quay lại tab/ứng dụng trên điện thoại
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && engine.audioCtx && engine.audioCtx.state === 'suspended') {
-      engine.audioCtx.resume();
+    if (engine.getActiveCount() > 0) {
+      if (engine.audioCtx && engine.audioCtx.state === 'suspended') {
+        engine.audioCtx.resume();
+      }
+      const shield = document.getElementById('bgShieldAudio');
+      if (shield && shield.paused) {
+        shield.play().catch(() => {});
+      }
     }
   });
 
@@ -144,6 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function toggleSoundItem(soundId, forceState = null) {
+    const shield = document.getElementById('bgShieldAudio');
+    if (shield && shield.paused) {
+      shield.play().catch(() => {});
+    }
     const isNowPlaying = engine.toggleSound(soundId, forceState);
     updateCardUI(soundId, isNowPlaying);
     updateMasterStatus();
@@ -311,10 +325,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item) activeNames.push(item.name);
           }
         }
+
+        let albumText = 'Âm thanh thư giãn & tĩnh tâm';
+        if (timer && timer.isRunning) {
+          albumText = timer.mode === 'sleep' 
+            ? `Hẹn giờ tắt: ${timer.getFormattedTime()}` 
+            : `Pomodoro: ${timer.getFormattedTime()}`;
+        }
+
         navigator.mediaSession.metadata = new MediaMetadata({
           title: 'ZenVibe - Relaxing Sounds',
           artist: activeNames.slice(0, 3).join(' • ') + (activeNames.length > 3 ? ` (+${activeNames.length - 3})` : ''),
-          album: 'Âm thanh thư giãn & tĩnh tâm',
+          album: albumText,
           artwork: [
             { src: 'assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
             { src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png' }
@@ -368,6 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Play / Pause Master Button
   btnMasterPlay.addEventListener('click', () => {
+    engine.initContext();
+    const shield = document.getElementById('bgShieldAudio');
+    if (shield && shield.paused) {
+      shield.play().catch(() => {});
+    }
     const activeCount = engine.getActiveCount();
 
     if (activeCount > 0 && !isMasterPaused) {
@@ -458,20 +485,43 @@ document.addEventListener('DOMContentLoaded', () => {
   // Quick buttons Sleep Timer
   document.querySelectorAll('.btn-sleep-val').forEach(btn => {
     btn.addEventListener('click', () => {
+      engine.initContext();
+      const shield = document.getElementById('bgShieldAudio');
+      if (shield && shield.paused) {
+        shield.play().catch(() => {});
+      }
+
+      // Nếu chưa có âm thanh nào bật, tự động bật không gian mặc định đầu tiên
+      if (engine.getActiveCount() === 0) {
+        presetManager.applyPreset(DEFAULT_PRESETS[0]);
+      }
+
       const mins = parseInt(btn.dataset.mins, 10);
       timer.startSleepTimer(mins);
-      showToast(`Hẹn giờ ngủ: ${mins} phút (sẽ fade-out êm dịu)`);
+      showToast(`Hẹn giờ ngủ: ${mins} phút (tự fade-out êm dịu)`);
       closeModal(timerModal);
+      updateMediaSession(engine.getActiveCount());
     });
   });
 
   // Quick buttons Pomodoro
   document.querySelectorAll('.btn-pomo-val').forEach(btn => {
     btn.addEventListener('click', () => {
+      engine.initContext();
+      const shield = document.getElementById('bgShieldAudio');
+      if (shield && shield.paused) {
+        shield.play().catch(() => {});
+      }
+
+      if (engine.getActiveCount() === 0) {
+        presetManager.applyPreset(DEFAULT_PRESETS[2]); // Office / Focus preset
+      }
+
       const mins = parseInt(btn.dataset.mins, 10);
       timer.startPomodoro(mins);
       showToast(`Bắt đầu tập trung Pomodoro: ${mins} phút`);
       closeModal(timerModal);
+      updateMediaSession(engine.getActiveCount());
     });
   });
 
@@ -481,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Timer Tick listener
+  let lastMediaUpdateSec = 0;
   timer.onTick(({ formatted, isRunning, mode, remaining }) => {
     timerClock.textContent = formatted;
     if (isRunning) {
@@ -490,10 +541,17 @@ document.addEventListener('DOMContentLoaded', () => {
       timerStatusHint.textContent = mode === 'sleep' 
         ? 'Âm thanh sẽ hạ dần âm lượng trong 15s cuối'
         : 'Phiên làm việc tập trung cao độ';
+
+      // Cập nhật thông tin lên màn hình khóa mỗi 5 giây
+      if (Math.abs(remaining - lastMediaUpdateSec) >= 5) {
+        lastMediaUpdateSec = remaining;
+        updateMediaSession(engine.getActiveCount());
+      }
     } else {
       timerBadge.style.display = 'none';
       btnOpenTimer.classList.remove('active');
       timerStatusHint.textContent = 'Hẹn giờ đang tắt';
+      updateMediaSession(engine.getActiveCount());
     }
   });
 

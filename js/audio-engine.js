@@ -53,34 +53,37 @@ class ZenAudioEngine {
     this._startBgKeeper();
   }
 
-  // Khởi động silent audio keeper để iOS duy trì playback khi khóa màn hình
+  // Khởi động silent audio shield để iOS duy trì playback khi khóa màn hình
   _startBgKeeper() {
     if (typeof document === 'undefined') return;
-    if (!this.bgKeeper) {
-      this.bgKeeper = document.createElement('audio');
-      this.bgKeeper.setAttribute('x-webkit-airplay', 'deny');
-      this.bgKeeper.setAttribute('playsinline', '');
-      this.bgKeeper.setAttribute('webkit-playsinline', '');
-      this.bgKeeper.preload = 'auto';
-      this.bgKeeper.loop = true;
-      this.bgKeeper.style.display = 'none';
-      // 180-byte ultra-lightweight silent WAV data URI
-      this.bgKeeper.src = 'data:audio/wav;base64,UklGRnwAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YVgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-      document.body.appendChild(this.bgKeeper);
+    let shield = document.getElementById('bgShieldAudio');
+    if (!shield) {
+      shield = document.createElement('audio');
+      shield.id = 'bgShieldAudio';
+      shield.setAttribute('x-webkit-airplay', 'deny');
+      shield.setAttribute('playsinline', '');
+      shield.setAttribute('webkit-playsinline', '');
+      shield.preload = 'auto';
+      shield.loop = true;
+      shield.style.display = 'none';
+      shield.src = 'assets/audio/silence.m4a';
+      document.body.appendChild(shield);
     }
 
-    if (this.bgKeeper.paused) {
-      this.bgKeeper.play().catch(e => {
-        console.warn('bgKeeper play error:', e);
+    if (shield.paused) {
+      shield.play().catch(e => {
+        console.warn('bgShield play error:', e);
       });
     }
   }
 
-  // Tạm dừng silent audio keeper khi không còn âm thanh nào phát
+  // Tạm dừng silent audio shield khi không còn âm thanh nào phát
   _stopBgKeeper() {
-    if (this.bgKeeper && !this.bgKeeper.paused) {
+    if (typeof document === 'undefined') return;
+    const shield = document.getElementById('bgShieldAudio');
+    if (shield && !shield.paused) {
       try {
-        this.bgKeeper.pause();
+        shield.pause();
       } catch (e) {}
     }
   }

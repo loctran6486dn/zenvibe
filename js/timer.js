@@ -1,7 +1,8 @@
 /**
  * timer.js
  * Quản lý hẹn giờ ngủ (Sleep Timer) và đồng hồ tập trung Pomodoro
- * Hỗ trợ hiệu ứng hạ âm lượng dần dần (15-second Smooth Fade-out)
+ * Sử dụng mốc thời gian thực Date.now() + timeupdate của background audio shield
+ * để đảm bảo đếm ngược chính xác 100% cả khi màn hình iPhone bị khóa / tắt.
  */
 
 class ZenTimer {
@@ -10,11 +11,27 @@ class ZenTimer {
     this.timerId = null;
     this.totalSeconds = 0;
     this.remainingSeconds = 0;
+    this.targetEndTime = 0;
+    this.fadeOutTime = 0;
     this.isRunning = false;
     this.mode = 'sleep'; // 'sleep' hoặc 'pomodoro'
     this.hasTriggeredFadeOut = false;
     this.onTickCallbacks = [];
     this.onCompleteCallbacks = [];
+
+    // Đồng bộ với timeupdate của bgShieldAudio để đồng hồ đếm chuẩn xác ngay cả khi iOS đóng băng setInterval
+    if (typeof document !== 'undefined') {
+      window.addEventListener('load', () => {
+        const shield = document.getElementById('bgShieldAudio');
+        if (shield) {
+          shield.addEventListener('timeupdate', () => {
+            if (this.isRunning) {
+              this._checkTimestamp();
+            }
+          });
+        }
+      });
+    }
   }
 
   // Đăng ký listener cập nhật giao diện mỗi giây
@@ -32,6 +49,8 @@ class ZenTimer {
     this.mode = 'sleep';
     this.totalSeconds = Math.round(minutes * 60);
     this.remainingSeconds = this.totalSeconds;
+    this.targetEndTime = Date.now() + this.totalSeconds * 1000;
+    this.fadeOutTime = this.targetEndTime - 15000; // Bắt đầu giảm âm 15s trước khi hết
     this.isRunning = true;
     this.hasTriggeredFadeOut = false;
     this._runLoop();
@@ -43,32 +62,45 @@ class ZenTimer {
     this.mode = 'pomodoro';
     this.totalSeconds = Math.round(workMinutes * 60);
     this.remainingSeconds = this.totalSeconds;
+    this.targetEndTime = Date.now() + this.totalSeconds * 1000;
+    this.fadeOutTime = this.targetEndTime;
     this.isRunning = true;
     this.hasTriggeredFadeOut = false;
     this._runLoop();
   }
 
+  // Kiểm tra thời gian dựa trên mốc timestamp thực tế
+  _checkTimestamp() {
+    if (!this.isRunning) return;
+
+    const now = Date.now();
+    const msLeft = this.targetEndTime - now;
+    this.remainingSeconds = Math.max(0, Math.ceil(msLeft / 1000));
+
+    // Nếu là Sleep Timer và đã đến mốc 15s cuối: Kích hoạt hạ dần âm lượng
+    if (this.mode === 'sleep' && now >= this.fadeOutTime && !this.hasTriggeredFadeOut) {
+      this.hasTriggeredFadeOut = true;
+      console.log('ZenTimer: Bắt đầu 15s fade-out êm dịu trước khi ngủ.');
+      this.engine.fadeOutMaster(15, () => {
+        console.log('ZenTimer: Đã hoàn tất tắt âm thanh.');
+      });
+    }
+
+    if (now >= this.targetEndTime) {
+      this._handleComplete();
+    } else {
+      this._notifyTick();
+    }
+  }
+
   _runLoop() {
     this._notifyTick();
+    if (this.timerId) {
+      clearInterval(this.timerId);
+    }
 
     this.timerId = setInterval(() => {
-      if (!this.isRunning) return;
-
-      this.remainingSeconds--;
-
-      // Nếu còn dưới 15s và là Sleep Timer: Bắt đầu Fade-out dần âm thanh
-      if (this.mode === 'sleep' && this.remainingSeconds <= 15 && !this.hasTriggeredFadeOut) {
-        this.hasTriggeredFadeOut = true;
-        this.engine.fadeOutMaster(15, () => {
-          console.log('Fade out hoàn tất, âm thanh đã dừng êm dịu.');
-        });
-      }
-
-      if (this.remainingSeconds <= 0) {
-        this._handleComplete();
-      } else {
-        this._notifyTick();
-      }
+      this._checkTimestamp();
     }, 1000);
   }
 
@@ -90,6 +122,7 @@ class ZenTimer {
     try {
       this.engine.initContext();
       const ctx = this.engine.audioCtx;
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -111,6 +144,8 @@ class ZenTimer {
   togglePause() {
     if (!this.isRunning && this.remainingSeconds > 0) {
       this.isRunning = true;
+      this.targetEndTime = Date.now() + this.remainingSeconds * 1000;
+      this.fadeOutTime = this.targetEndTime - 15000;
       this._runLoop();
     } else {
       this.isRunning = false;
@@ -130,6 +165,8 @@ class ZenTimer {
       this.timerId = null;
     }
     this.remainingSeconds = 0;
+    this.targetEndTime = 0;
+    this.fadeOutTime = 0;
     this.hasTriggeredFadeOut = false;
     this._notifyTick();
   }

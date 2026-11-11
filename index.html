@@ -23,6 +23,15 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- Background Audio Shield cho iOS Safari & Android khi khóa / tắt màn hình -->
+  <audio id="bgShieldAudio" 
+         src="assets/audio/silence.m4a" 
+         loop 
+         preload="auto" 
+         playsinline 
+         webkit-playsinline 
+         style="display:none;"></audio>
+
   <!-- Canvas nền hiệu ứng lá bay & đom đóm êm đềm -->
   <canvas id="ambientCanvas"></canvas>
 
