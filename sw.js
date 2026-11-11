@@ -1,5 +1,5 @@
 // sw.js - ZenVibe Service Worker for Offline PWA Support
-const CACHE_NAME = 'zenvibe-v5';
+const CACHE_NAME = 'zenvibe-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

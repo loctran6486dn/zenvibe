@@ -797,21 +797,30 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(20, 19, 34, 0.94);
+  width: 100%;
+  background: rgba(20, 19, 34, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)) 16px;
+  padding-top: 6px;
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 100;
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .dock-inner {
-  max-width: 600px;
+  max-width: 480px;
+  width: 100%;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
+  justify-items: center;
   position: relative;
 }
 
@@ -820,16 +829,28 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 4px 0;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
   transition: var(--transition);
   position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dock-item span:not(.dock-icon):not(#timerBadge) {
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  font-size: 0.70rem;
+  line-height: 1.2;
 }
 
 .dock-item .dock-icon {
@@ -860,15 +881,35 @@ body {
   filter: drop-shadow(0 0 6px var(--primary-glow));
 }
 
+.dock-timer-badge {
+  display: none;
+  position: absolute;
+  top: 1px;
+  left: calc(50% + 8px);
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px var(--primary-glow);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
 /* Center Elevated FAB (The Purple Plus Button from Screenshots!) */
 .dock-fab-wrap {
   position: relative;
-  top: -18px;
+  top: -16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .btn-center-fab {
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: var(--primary);
   border: 3px solid #141322;
@@ -879,6 +920,7 @@ body {
   cursor: pointer;
   box-shadow: 0 8px 24px var(--primary-glow);
   transition: var(--transition);
+  margin: 0 auto;
 }
 
 .btn-center-fab svg {
