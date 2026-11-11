@@ -16,11 +16,19 @@ class ZenAudioEngine {
     this.bufferSources = new Map(); // id -> AudioBufferSourceNode
     this.loadingPromises = new Map(); // id -> Promise<AudioBuffer>
     this.audioElements = new Map(); // id -> HTMLAudioElement (secondary fallback)
+    this.bgKeeper = null; // iOS background lock screen audio keeper
     this.noiseBuffers = {}; // cache noise buffers
   }
 
   // Khởi tạo AudioContext sau tương tác của người dùng
   initContext() {
+    // 1. Khai báo session là Playback (Media Player) để iOS không ngắt khi khóa màn hình hay bật gạt rung
+    if (typeof navigator !== 'undefined' && 'audioSession' in navigator) {
+      try {
+        navigator.audioSession.type = 'playback';
+      } catch (e) {}
+    }
+
     if (!this.audioCtx) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       this.audioCtx = new AudioContextClass();
@@ -39,6 +47,41 @@ class ZenAudioEngine {
 
     if (this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();
+    }
+
+    // Khởi động background audio keeper
+    this._startBgKeeper();
+  }
+
+  // Khởi động silent audio keeper để iOS duy trì playback khi khóa màn hình
+  _startBgKeeper() {
+    if (typeof document === 'undefined') return;
+    if (!this.bgKeeper) {
+      this.bgKeeper = document.createElement('audio');
+      this.bgKeeper.setAttribute('x-webkit-airplay', 'deny');
+      this.bgKeeper.setAttribute('playsinline', '');
+      this.bgKeeper.setAttribute('webkit-playsinline', '');
+      this.bgKeeper.preload = 'auto';
+      this.bgKeeper.loop = true;
+      this.bgKeeper.style.display = 'none';
+      // 180-byte ultra-lightweight silent WAV data URI
+      this.bgKeeper.src = 'data:audio/wav;base64,UklGRnwAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YVgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      document.body.appendChild(this.bgKeeper);
+    }
+
+    if (this.bgKeeper.paused) {
+      this.bgKeeper.play().catch(e => {
+        console.warn('bgKeeper play error:', e);
+      });
+    }
+  }
+
+  // Tạm dừng silent audio keeper khi không còn âm thanh nào phát
+  _stopBgKeeper() {
+    if (this.bgKeeper && !this.bgKeeper.paused) {
+      try {
+        this.bgKeeper.pause();
+      } catch (e) {}
     }
   }
 
@@ -170,6 +213,7 @@ class ZenAudioEngine {
   // Bắt đầu phát âm thanh
   startSound(soundId) {
     this.initContext();
+    this._startBgKeeper();
     const channel = this.getChannel(soundId);
     if (channel.isPlaying) return;
 
@@ -280,6 +324,11 @@ class ZenAudioEngine {
 
     channel.isPlaying = false;
 
+    // Tạm dừng background keeper nếu không còn track nào phát
+    if (this.getActiveCount() === 0) {
+      this._stopBgKeeper();
+    }
+
     // Dừng AudioBufferSourceNode
     if (this.bufferSources.has(soundId)) {
       const source = this.bufferSources.get(soundId);
@@ -387,6 +436,7 @@ class ZenAudioEngine {
 
   // Tắt tất cả các âm thanh đang phát
   stopAll(fadeDuration = 0.3) {
+    this._stopBgKeeper();
     for (const [id, channel] of this.channels.entries()) {
       if (channel.isPlaying) {
         this.stopSound(id, fadeDuration);
