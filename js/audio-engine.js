@@ -1669,61 +1669,71 @@ class ZenAudioEngine {
         break;
       }
 
-      // 28. Sáo trúc thiền Bansuri
+      // 28. Sáo trúc thiền Bansuri (Bansuri Meditation Flute)
       case 'bamboo_flute': {
         let isAlive = true;
-        const notes = [440.00, 493.88, 554.37, 659.25, 739.99];
+        // Thang ngũ cung thiền D4/G4 trầm ấm (D4, E4, G4, A4, B4)
+        const notes = [293.66, 329.63, 392.00, 440.00, 493.88];
 
         const playFlute = () => {
           if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
           const freq = notes[Math.floor(Math.random() * notes.length)];
           const startT = ctx.currentTime;
-          const dur = 3.2;
+          const dur = 4.2;
 
           const osc = ctx.createOscillator();
+          const warmFilter = ctx.createBiquadFilter();
           const gain = ctx.createGain();
+
+          warmFilter.type = 'lowpass';
+          warmFilter.frequency.setValueAtTime(1400, startT);
 
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startT);
 
-          // Rung hơi (vibrato)
+          // Rung hơi tự nhiên (vibrato có độ trễ 0.6s)
           const lfo = ctx.createOscillator();
           const lfoGain = ctx.createGain();
-          lfo.frequency.setValueAtTime(5.0, startT);
-          lfoGain.gain.setValueAtTime(2.5, startT);
+          lfo.frequency.setValueAtTime(3.8, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT + 0.6);
+          lfoGain.gain.linearRampToValueAtTime(2.8, startT + 1.4);
           lfo.connect(osc.frequency);
           lfo.start(startT);
           lfo.stop(startT + dur);
 
-          // Tiếng hơi thở sáo trúc (breath noise)
+          // Tiếng thở hơi sáo trúc (pink noise lọc dải thông mềm mại)
           const breathSrc = this._createNoiseSource(this.noiseBuffers.pink);
           const breathFilter = ctx.createBiquadFilter();
           const breathGain = ctx.createGain();
           breathFilter.type = 'bandpass';
-          breathFilter.frequency.setValueAtTime(freq * 1.5, startT);
-          breathFilter.Q.setValueAtTime(3.0, startT);
+          breathFilter.frequency.setValueAtTime(freq, startT);
+          breathFilter.Q.setValueAtTime(2.5, startT);
 
           breathGain.gain.setValueAtTime(0.001, startT);
-          breathGain.gain.linearRampToValueAtTime(0.025, startT + 0.4);
+          breathGain.gain.linearRampToValueAtTime(0.015, startT + 0.5);
           breathGain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
 
           breathSrc.connect(breathFilter);
           breathFilter.connect(breathGain);
-          breathGain.connect(outNode);
+          breathGain.connect(warmFilter);
           breathSrc.start(startT);
           breathSrc.stop(startT + dur);
 
+          // Đường bao âm thanh thở vào - thở ra nhẹ nhàng
           gain.gain.setValueAtTime(0.001, startT);
-          gain.gain.linearRampToValueAtTime(0.12, startT + 0.35);
+          gain.gain.linearRampToValueAtTime(0.12, startT + 0.6);
+          gain.gain.setValueAtTime(0.12, startT + dur - 0.8);
           gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
 
-          osc.connect(gain);
+          osc.connect(warmFilter);
+          warmFilter.connect(gain);
           gain.connect(outNode);
 
           osc.start(startT);
           osc.stop(startT + dur + 0.1);
 
-          const nextInterval = 4200 + Math.random() * 3500;
+          const nextInterval = 4800 + Math.random() * 3200;
           timeoutId = setTimeout(playFlute, nextInterval);
         };
         let timeoutId = setTimeout(playFlute, 1000);
@@ -1731,34 +1741,52 @@ class ZenAudioEngine {
         break;
       }
 
-      // 29. Sáo đất Ocarina
+      // 29. Sáo đất Ocarina (Clay Ocarina)
       case 'ocarina': {
         let isAlive = true;
-        const notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00];
+        // Giai điệu mộc mạc tròn trịa (G4, C5, D5, E5, G5)
+        const notes = [392.00, 523.25, 587.33, 659.25, 783.99];
 
         const playOcarina = () => {
           if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
           const freq = notes[Math.floor(Math.random() * notes.length)];
           const startT = ctx.currentTime;
-          const dur = 2.6;
+          const dur = 3.6;
 
           const osc = ctx.createOscillator();
+          const filter = ctx.createBiquadFilter();
           const gain = ctx.createGain();
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1200, startT);
 
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startT);
 
+          // Rung nhẹ nhàng
+          const lfo = ctx.createOscillator();
+          const lfoGain = ctx.createGain();
+          lfo.frequency.setValueAtTime(4.5, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT + 0.4);
+          lfoGain.gain.linearRampToValueAtTime(2.4, startT + 1.2);
+          lfo.connect(osc.frequency);
+          lfo.start(startT);
+          lfo.stop(startT + dur);
+
           gain.gain.setValueAtTime(0.001, startT);
-          gain.gain.linearRampToValueAtTime(0.11, startT + 0.18);
+          gain.gain.linearRampToValueAtTime(0.11, startT + 0.4);
+          gain.gain.setValueAtTime(0.11, startT + dur - 0.6);
           gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
 
-          osc.connect(gain);
+          osc.connect(filter);
+          filter.connect(gain);
           gain.connect(outNode);
 
           osc.start(startT);
           osc.stop(startT + dur + 0.1);
 
-          const nextInterval = 3200 + Math.random() * 3000;
+          const nextInterval = 4200 + Math.random() * 3000;
           timeoutId = setTimeout(playOcarina, nextInterval);
         };
         let timeoutId = setTimeout(playOcarina, 1200);
@@ -1766,51 +1794,69 @@ class ZenAudioEngine {
         break;
       }
 
-      // 30. Sáo sậy Pan Flute
+      // 30. Sáo sậy Pan Flute (Pan Flute)
       case 'pan_flute': {
         let isAlive = true;
-        const notes = [587.33, 659.25, 783.99, 880.00, 1046.50];
+        // Âm hưởng thảo nguyên an lành (D4, G4, A4, B4, D5)
+        const notes = [293.66, 392.00, 440.00, 493.88, 587.33];
 
         const playPan = () => {
           if (!isAlive || !this.audioCtx || ctx.state === 'closed') return;
           const freq = notes[Math.floor(Math.random() * notes.length)];
           const startT = ctx.currentTime;
-          const dur = 2.4;
+          const dur = 3.8;
 
           const osc = ctx.createOscillator();
+          const warmFilter = ctx.createBiquadFilter();
           const gain = ctx.createGain();
+
+          warmFilter.type = 'lowpass';
+          warmFilter.frequency.setValueAtTime(1300, startT);
 
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, startT);
 
-          // Tiếng thở ống tre đặc trưng (pipe chiff)
+          // Rung nhẹ
+          const lfo = ctx.createOscillator();
+          const lfoGain = ctx.createGain();
+          lfo.frequency.setValueAtTime(4.8, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT);
+          lfoGain.gain.setValueAtTime(0.001, startT + 0.35);
+          lfoGain.gain.linearRampToValueAtTime(2.8, startT + 1.2);
+          lfo.connect(osc.frequency);
+          lfo.start(startT);
+          lfo.stop(startT + dur);
+
+          // Tiếng thở đầu ống tre ấm áp (chiff transient)
           const chiffSrc = this._createNoiseSource(this.noiseBuffers.pink);
           const chiffFilter = ctx.createBiquadFilter();
           const chiffGain = ctx.createGain();
 
-          chiffFilter.type = 'bandpass';
-          chiffFilter.frequency.setValueAtTime(freq * 1.2, startT);
+          chiffFilter.type = 'lowpass';
+          chiffFilter.frequency.setValueAtTime(800, startT);
 
-          chiffGain.gain.setValueAtTime(0.04, startT);
-          chiffGain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.12);
+          chiffGain.gain.setValueAtTime(0.02, startT);
+          chiffGain.gain.exponentialRampToValueAtTime(0.0001, startT + 0.08);
 
           chiffSrc.connect(chiffFilter);
           chiffFilter.connect(chiffGain);
-          chiffGain.connect(outNode);
+          chiffGain.connect(warmFilter);
           chiffSrc.start(startT);
-          chiffSrc.stop(startT + 0.15);
+          chiffSrc.stop(startT + 0.1);
 
           gain.gain.setValueAtTime(0.001, startT);
-          gain.gain.linearRampToValueAtTime(0.12, startT + 0.1);
+          gain.gain.linearRampToValueAtTime(0.12, startT + 0.35);
+          gain.gain.setValueAtTime(0.12, startT + dur - 0.6);
           gain.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
 
-          osc.connect(gain);
+          osc.connect(warmFilter);
+          warmFilter.connect(gain);
           gain.connect(outNode);
 
           osc.start(startT);
           osc.stop(startT + dur + 0.1);
 
-          const nextInterval = 3000 + Math.random() * 3200;
+          const nextInterval = 4400 + Math.random() * 3200;
           timeoutId = setTimeout(playPan, nextInterval);
         };
         let timeoutId = setTimeout(playPan, 1000);

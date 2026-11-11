@@ -455,41 +455,172 @@ def gen_zen_zither():
     return apply_seamless_loop(left, right)
 
 
+# =========================================================================
+# DSP UTILITIES & ACOUSTIC FILTER CLASSES
+# =========================================================================
+
+class PinkNoise:
+    def __init__(self):
+        self.b0 = self.b1 = self.b2 = self.b3 = self.b4 = self.b5 = self.b6 = 0.0
+    def tick(self):
+        w = random.random() * 2 - 1
+        self.b0 = 0.99886 * self.b0 + w * 0.0555179
+        self.b1 = 0.99332 * self.b1 + w * 0.0750759
+        self.b2 = 0.96900 * self.b2 + w * 0.1538520
+        self.b3 = 0.86650 * self.b3 + w * 0.3104856
+        self.b4 = 0.55000 * self.b4 + w * 0.5329522
+        self.b5 = -0.7616 * self.b5 - w * 0.0168980
+        p = self.b0 + self.b1 + self.b2 + self.b3 + self.b4 + self.b5 + self.b6 + w * 0.5362
+        self.b6 = w * 0.115926
+        return p * 0.11
+
+class ResonantBP:
+    def __init__(self, f0, Q, sample_rate=44100):
+        w0 = 2.0 * math.pi * f0 / sample_rate
+        alpha = math.sin(w0) / (2.0 * Q)
+        b0 = alpha
+        b1 = 0.0
+        b2 = -alpha
+        a0 = 1.0 + alpha
+        a1 = -2.0 * math.cos(w0)
+        a2 = 1.0 - alpha
+        self.b0 = b0 / a0
+        self.b1 = b1 / a0
+        self.b2 = b2 / a0
+        self.a1 = a1 / a0
+        self.a2 = a2 / a0
+        self.x1 = self.x2 = self.y1 = self.y2 = 0.0
+    def tick(self, x):
+        y = self.b0 * x + self.b1 * self.x1 + self.b2 * self.x2 - self.a1 * self.y1 - self.a2 * self.y2
+        self.x2 = self.x1
+        self.x1 = x
+        self.y2 = self.y1
+        self.y1 = y
+        return y
+
+class LowPassFilter:
+    def __init__(self, cutoff, sample_rate=44100):
+        w0 = 2.0 * math.pi * cutoff / sample_rate
+        self.alpha = w0 / (1.0 + w0)
+        self.y = 0.0
+    def tick(self, x):
+        self.y += self.alpha * (x - self.y)
+        return self.y
+
+class StereoReverb:
+    def __init__(self):
+        combs_l = [1116, 1188, 1277, 1356]
+        combs_r = [1139, 1211, 1300, 1379]
+        self.combs_l = [[0.0] * d for d in combs_l]
+        self.combs_r = [[0.0] * d for d in combs_r]
+        self.indices_l = [0] * 4
+        self.indices_r = [0] * 4
+        self.damp_l = [0.0] * 4
+        self.damp_r = [0.0] * 4
+        self.feedback = 0.84
+        self.damp = 0.38
+        
+        allpass_l = [556, 441]
+        allpass_r = [579, 464]
+        self.ap_l = [[0.0] * d for d in allpass_l]
+        self.ap_r = [[0.0] * d for d in allpass_r]
+        self.ap_idx_l = [0] * 2
+        self.ap_idx_r = [0] * 2
+        self.ap_feedback = 0.5
+        
+    def process(self, in_l, in_r):
+        out_l = 0.0
+        out_r = 0.0
+        for i in range(4):
+            idx_l = self.indices_l[i]
+            idx_r = self.indices_r[i]
+            buf_l = self.combs_l[i]
+            buf_r = self.combs_r[i]
+            dl = buf_l[idx_l]
+            dr = buf_r[idx_r]
+            self.damp_l[i] = dl * (1.0 - self.damp) + self.damp_l[i] * self.damp
+            self.damp_r[i] = dr * (1.0 - self.damp) + self.damp_r[i] * self.damp
+            buf_l[idx_l] = in_l + self.damp_l[i] * self.feedback
+            buf_r[idx_r] = in_r + self.damp_r[i] * self.feedback
+            self.indices_l[i] = (idx_l + 1) % len(buf_l)
+            self.indices_r[i] = (idx_r + 1) % len(buf_r)
+            out_l += dl
+            out_r += dr
+        out_l *= 0.25
+        out_r *= 0.25
+        for i in range(2):
+            idx_l = self.ap_idx_l[i]
+            idx_r = self.ap_idx_r[i]
+            buf_l = self.ap_l[i]
+            buf_r = self.ap_r[i]
+            bufout_l = buf_l[idx_l]
+            bufout_r = buf_r[idx_r]
+            buf_l[idx_l] = out_l + bufout_l * self.ap_feedback
+            buf_r[idx_r] = out_r + bufout_r * self.ap_feedback
+            out_l = -out_l * self.ap_feedback + bufout_l * (1.0 - self.ap_feedback * self.ap_feedback)
+            out_r = -out_r * self.ap_feedback + bufout_r * (1.0 - self.ap_feedback * self.ap_feedback)
+            self.ap_idx_l[i] = (idx_l + 1) % len(buf_l)
+            self.ap_idx_r[i] = (idx_r + 1) % len(buf_r)
+        return out_l, out_r
+
+
 def gen_warm_cello():
-    """Deep Warm Cello Bowed Drones in C2 & G2 (65Hz / 98Hz) for somatic grounding."""
+    """Deep Warm Cello Bowed Drones in C2 & G2 (65.41Hz / 97.99Hz) with smooth phase accumulation."""
     left = [0.0] * TOTAL_SAMPLES
     right = [0.0] * TOTAL_SAMPLES
     
-    # Breathing drone cycle: 7-second swells
     f_c2 = 65.41
     f_g2 = 97.99
     
+    phase_c2 = 0.0
+    phase_g2 = 0.0
+    vib_phase = 0.0
+    two_pi = 2.0 * math.pi
+    dt = 1.0 / SAMPLE_RATE
+    
+    pn = PinkNoise()
+    lp = LowPassFilter(280.0, SAMPLE_RATE)
+    rb = StereoReverb()
+    
     for i in range(TOTAL_SAMPLES):
-        t = i / SAMPLE_RATE
-        # Slow cello bow breathing vibrato (4.5Hz)
-        vib = 1.0 + 0.008 * math.sin(2 * math.pi * 4.2 * t)
-        # Slow acoustic breathing dynamics
-        swell = 0.5 + 0.5 * math.sin(2 * math.pi * (1.0 / 7.0) * t)
+        t = i * dt
+        # Slow cello bow breathing vibrato (4.2Hz)
+        vib_phase += two_pi * 4.2 * dt
+        cur_vib = 1.0 + 0.007 * math.sin(vib_phase)
         
-        # C2 string (warm saw filtered)
+        # Slow somatic breathing swell (7.0s cycle)
+        swell = 0.45 + 0.55 * (0.5 + 0.5 * math.sin(two_pi * (1.0 / 7.0) * t))
+        
+        # Advance phases
+        phase_c2 += two_pi * f_c2 * cur_vib * dt
+        if phase_c2 > two_pi: phase_c2 -= two_pi * math.floor(phase_c2 / two_pi)
+        
+        phase_g2 += two_pi * f_g2 * cur_vib * dt
+        if phase_g2 > two_pi: phase_g2 -= two_pi * math.floor(phase_g2 / two_pi)
+        
+        # C2 string (rich warm cello saw tone)
         c2_tone = (
-            math.sin(2 * math.pi * f_c2 * vib * t) * 0.70 +
-            math.sin(2 * math.pi * f_c2 * 2.0 * vib * t) * 0.45 +
-            math.sin(2 * math.pi * f_c2 * 3.0 * vib * t) * 0.25 +
-            math.sin(2 * math.pi * f_c2 * 4.0 * vib * t) * 0.12
+            math.sin(phase_c2) * 0.70 +
+            math.sin(2.0 * phase_c2) * 0.38 +
+            math.sin(3.0 * phase_c2) * 0.18 +
+            math.sin(4.0 * phase_c2) * 0.08
         )
+        
         # G2 string (fifth harmony)
         g2_tone = (
-            math.sin(2 * math.pi * f_g2 * vib * t) * 0.55 +
-            math.sin(2 * math.pi * f_g2 * 2.0 * vib * t) * 0.30 +
-            math.sin(2 * math.pi * f_g2 * 3.0 * vib * t) * 0.15
+            math.sin(phase_g2) * 0.52 +
+            math.sin(2.0 * phase_g2) * 0.25 +
+            math.sin(3.0 * phase_g2) * 0.10
         )
-        # Bow rosin texture
-        rosin = (random.random() * 2 - 1) * 0.04
         
-        sig = (c2_tone + g2_tone + rosin) * swell
-        left[i] = sig * 0.8
-        right[i] = sig * 0.75 + math.sin(2 * math.pi * (f_g2 + 0.5) * t) * 0.15 * swell
+        # Soft bow rosin friction (filtered pink noise)
+        rosin = lp.tick(pn.tick()) * 0.12
+        
+        dry = (c2_tone + g2_tone + rosin) * swell
+        rev_l, rev_r = rb.process(dry * 0.35, dry * 0.35)
+        
+        left[i] = dry * 0.65 + rev_l * 0.35
+        right[i] = dry * 0.60 + rev_r * 0.40
         
     return apply_seamless_loop(left, right)
 
@@ -499,136 +630,189 @@ def gen_warm_cello():
 # =========================================================================
 
 def gen_bamboo_flute():
-    """Zen Bamboo Flute (Bansuri / Shakuhachi) with breathy air embouchure and meditative bends."""
+    """Zen Bamboo Flute (Bansuri / Shakuhachi): Deep, tranquil, soul-soothing, rich wooden tone."""
     left = [0.0] * TOTAL_SAMPLES
     right = [0.0] * TOTAL_SAMPLES
     
-    # Meditative flute phrases: (start_t, dur, freq, pan_l, pan_r)
+    # Meditative pentatonic phrases: (start_t, dur, freq, pan_l, pan_r)
     phrases = [
-        (0.8, 4.5, 349.23, 0.7, 0.5),   # F4
-        (6.0, 5.0, 392.00, 0.5, 0.8),   # G4
-        (11.8, 5.2, 440.00, 0.8, 0.4),  # A4
-        (17.8, 4.8, 523.25, 0.4, 0.8),  # C5
-        (23.2, 4.6, 440.00, 0.6, 0.6)   # A4
+        (1.0, 4.8, 293.66, 0.65, 0.55),   # D4: grounding opening breath
+        (6.8, 5.2, 392.00, 0.50, 0.75),   # G4: soaring tranquilly
+        (13.0, 4.6, 440.00, 0.75, 0.45),  # A4: peaceful zenith
+        (18.6, 4.2, 493.88, 0.45, 0.70),  # B4: gentle evening descent
+        (23.6, 5.0, 392.00, 0.60, 0.60)   # G4: peaceful resolution
     ]
+    
+    two_pi = 2.0 * math.pi
+    dt = 1.0 / SAMPLE_RATE
+    pn = PinkNoise()
+    rb = StereoReverb()
     
     for st, dur, f0, pl, pr in phrases:
         start_idx = int(st * SAMPLE_RATE)
         end_idx = min(TOTAL_SAMPLES, int((st + dur) * SAMPLE_RATE))
+        bp = ResonantBP(f0, 2.8, SAMPLE_RATE)
+        
+        phase = 0.0
+        vib_phase = 0.0
         
         for i in range(start_idx, end_idx):
-            dt = (i - start_idx) / SAMPLE_RATE
-            # Flute envelope: gentle breath in (0.4s), sustained tone, breath out (0.6s)
-            if dt < 0.4:
-                env = math.sin((dt / 0.4) * math.pi * 0.5)
-            elif dt > (dur - 0.6):
-                env = math.sin(((dur - dt) / 0.6) * math.pi * 0.5)
+            t_note = (i - start_idx) * dt
+            # S-curve breath envelope: 0.6s soft breath-in, 0.8s gentle breath-out
+            if t_note < 0.6:
+                env = math.sin((t_note / 0.6) * math.pi * 0.5) ** 2
+            elif t_note > (dur - 0.8):
+                env = math.sin(((dur - t_note) / 0.8) * math.pi * 0.5) ** 2
             else:
                 env = 1.0
                 
-            # Shakuhachi micro-vibrato (4.2 Hz) and pitch bend
-            vib = 1.0 + 0.012 * math.sin(2 * math.pi * 4.2 * dt)
-            # Subtle pitch bend up at beginning
-            bend = 1.0 - 0.03 * math.exp(-dt / 0.15)
-            cur_f = f0 * vib * bend
+            # Natural human breath tremor (0.8Hz swell, +/-4%)
+            breath_tremor = 1.0 + 0.04 * math.sin(two_pi * 0.8 * t_note)
             
-            # Harmonic richness of bamboo tube
+            # Delayed vibrato (begins gracefully after 0.5s)
+            vib_onset = 0.0 if t_note < 0.5 else min(1.0, (t_note - 0.5) / 0.8)
+            vib_phase += two_pi * 3.8 * dt
+            cur_f = f0 + 2.8 * vib_onset * math.sin(vib_phase)
+            
+            # True phase accumulator (sample accurate, zero frequency explosion)
+            phase += two_pi * cur_f * dt
+            if phase > two_pi:
+                phase -= two_pi * math.floor(phase / two_pi)
+                
+            # Rich organic bamboo tube harmonics (round fundamental with mellow wooden overtones)
             tone = (
-                math.sin(2 * math.pi * cur_f * dt) * 0.85 +
-                math.sin(2 * math.pi * cur_f * 2.0 * dt) * 0.35 +
-                math.sin(2 * math.pi * cur_f * 3.0 * dt) * 0.15
+                math.sin(phase) * 0.86 +
+                math.sin(2.0 * phase) * 0.15 +
+                math.sin(3.0 * phase) * 0.03
             )
-            # Breath air noise
-            breath = (random.random() * 2 - 1) * 0.12 * env
             
-            val = (tone + breath) * env
-            left[i] += val * pl
-            right[i] += val * pr
+            # Warm resonant bamboo air breath (filtered pink noise)
+            breath = bp.tick(pn.tick()) * 0.08
+            
+            dry = (tone + breath) * env * breath_tremor
+            rev_l, rev_r = rb.process(dry * 0.45 * pl, dry * 0.45 * pr)
+            
+            left[i] += (dry * pl * 0.65 + rev_l * 0.35)
+            right[i] += (dry * pr * 0.65 + rev_r * 0.35)
             
     return apply_seamless_loop(left, right)
 
 
 def gen_clay_ocarina():
-    """Warm Clay Ocarina: Sweet, hollow, soothing vessel flute tones."""
+    """Warm Clay Ocarina: Sweet, hollow, soothing vessel flute tones in gentle pentatonic lullaby."""
     left = [0.0] * TOTAL_SAMPLES
     right = [0.0] * TOTAL_SAMPLES
     
     notes = [
-        (0.6, 3.8, 523.25, 0.7, 0.5),   # C5
-        (5.0, 4.2, 587.33, 0.5, 0.8),   # D5
-        (10.0, 4.0, 659.25, 0.8, 0.4),  # E5
-        (14.8, 4.5, 783.99, 0.4, 0.8),  # G5
-        (20.0, 4.2, 659.25, 0.7, 0.5),  # E5
-        (24.6, 3.2, 523.25, 0.6, 0.6)   # C5
+        (0.8, 4.2, 392.00, 0.65, 0.55),   # G4
+        (5.8, 4.6, 523.25, 0.50, 0.70),   # C5
+        (11.2, 4.2, 659.25, 0.70, 0.50),  # E5
+        (16.2, 4.5, 587.33, 0.55, 0.70),  # D5
+        (21.5, 4.8, 523.25, 0.60, 0.60)   # C5
     ]
+    
+    two_pi = 2.0 * math.pi
+    dt = 1.0 / SAMPLE_RATE
+    pn = PinkNoise()
+    rb = StereoReverb()
     
     for st, dur, f0, pl, pr in notes:
         start_idx = int(st * SAMPLE_RATE)
         end_idx = min(TOTAL_SAMPLES, int((st + dur) * SAMPLE_RATE))
+        lp = LowPassFilter(1100.0, SAMPLE_RATE)
+        
+        phase = 0.0
+        vib_phase = 0.0
+        
         for i in range(start_idx, end_idx):
-            dt = (i - start_idx) / SAMPLE_RATE
-            if dt < 0.3:
-                env = math.sin((dt / 0.3) * math.pi * 0.5)
-            elif dt > (dur - 0.5):
-                env = math.sin(((dur - dt) / 0.5) * math.pi * 0.5)
+            t_note = (i - start_idx) * dt
+            if t_note < 0.4:
+                env = math.sin((t_note / 0.4) * math.pi * 0.5) ** 2
+            elif t_note > (dur - 0.6):
+                env = math.sin(((dur - t_note) / 0.6) * math.pi * 0.5) ** 2
             else:
                 env = 1.0
                 
-            vib = 1.0 + 0.008 * math.sin(2 * math.pi * 4.6 * dt)
-            cur_f = f0 * vib
+            vib_onset = 0.0 if t_note < 0.4 else min(1.0, (t_note - 0.4) / 0.6)
+            vib_phase += two_pi * 4.5 * dt
+            cur_f = f0 + 2.4 * vib_onset * math.sin(vib_phase)
             
-            # Ocarina is very close to pure sine with soft second harmonic
-            tone = math.sin(2 * math.pi * cur_f * dt) * 0.90 + math.sin(2 * math.pi * cur_f * 2.0 * dt) * 0.12
-            air = (random.random() * 2 - 1) * 0.06 * env
+            phase += two_pi * cur_f * dt
+            if phase > two_pi:
+                phase -= two_pi * math.floor(phase / two_pi)
+                
+            # Ocarina Helmholtz resonator: 96% pure fundamental sine + 4% 2nd harmonic
+            tone = math.sin(phase) * 0.96 + math.sin(2.0 * phase) * 0.04
+            air = lp.tick(pn.tick()) * 0.03
             
-            val = (tone + air) * env
-            left[i] += val * pl
-            right[i] += val * pr
+            dry = (tone + air) * env
+            rev_l, rev_r = rb.process(dry * 0.40 * pl, dry * 0.40 * pr)
+            
+            left[i] += (dry * pl * 0.70 + rev_l * 0.30)
+            right[i] += (dry * pr * 0.70 + rev_r * 0.30)
             
     return apply_seamless_loop(left, right)
 
 
 def gen_pan_flute():
-    """Serene Andean / Romanian Pan Flute with airy chiff attack and pastoral resonance."""
+    """Serene Andean / Romanian Pan Flute: Zamfir-style peaceful pastoral pipes with airy warmth."""
     left = [0.0] * TOTAL_SAMPLES
     right = [0.0] * TOTAL_SAMPLES
     
     melody = [
-        (0.8, 3.6, 392.00, 0.7, 0.5),   # G4
-        (4.8, 3.8, 440.00, 0.5, 0.8),   # A4
-        (9.2, 4.2, 523.25, 0.8, 0.4),   # C5
-        (14.0, 4.5, 587.33, 0.4, 0.8),  # D5
-        (19.2, 4.0, 440.00, 0.7, 0.5),  # A4
-        (23.8, 3.8, 392.00, 0.6, 0.6)   # G4
+        (1.0, 4.0, 293.66, 0.65, 0.55),   # D4
+        (5.8, 4.4, 392.00, 0.50, 0.70),   # G4
+        (11.0, 4.5, 493.88, 0.70, 0.45),  # B4
+        (16.4, 4.2, 440.00, 0.50, 0.70),  # A4
+        (21.4, 4.8, 392.00, 0.60, 0.60)   # G4
     ]
+    
+    two_pi = 2.0 * math.pi
+    dt = 1.0 / SAMPLE_RATE
+    pn = PinkNoise()
+    rb = StereoReverb()
     
     for st, dur, f0, pl, pr in melody:
         start_idx = int(st * SAMPLE_RATE)
         end_idx = min(TOTAL_SAMPLES, int((st + dur) * SAMPLE_RATE))
+        lp = LowPassFilter(800.0, SAMPLE_RATE)
+        
+        phase = 0.0
+        vib_phase = 0.0
+        
         for i in range(start_idx, end_idx):
-            dt = (i - start_idx) / SAMPLE_RATE
-            if dt < 0.25:
-                env = math.sin((dt / 0.25) * math.pi * 0.5)
-            elif dt > (dur - 0.4):
-                env = math.sin(((dur - dt) / 0.4) * math.pi * 0.5)
+            t_note = (i - start_idx) * dt
+            if t_note < 0.35:
+                env = math.sin((t_note / 0.35) * math.pi * 0.5) ** 2
+            elif t_note > (dur - 0.6):
+                env = math.sin(((dur - t_note) / 0.6) * math.pi * 0.5) ** 2
             else:
                 env = 1.0
                 
-            vib = 1.0 + 0.010 * math.sin(2 * math.pi * 5.0 * dt)
-            cur_f = f0 * vib
+            vib_onset = 0.0 if t_note < 0.35 else min(1.0, (t_note - 0.35) / 0.7)
+            vib_phase += two_pi * 4.8 * dt
+            cur_f = f0 + 3.0 * vib_onset * math.sin(vib_phase)
             
-            # Pipe attack chiff transient (airy puff)
-            chiff = (random.random() * 2 - 1) * 0.22 * math.exp(-dt / 0.05)
+            phase += two_pi * cur_f * dt
+            if phase > two_pi:
+                phase -= two_pi * math.floor(phase / two_pi)
+                
+            # Stopped pipe harmonics: odd harmonic emphasis
             tone = (
-                math.sin(2 * math.pi * cur_f * dt) * 0.85 +
-                math.sin(2 * math.pi * cur_f * 2.0 * dt) * 0.28 +
-                math.sin(2 * math.pi * cur_f * 3.0 * dt) * 0.12
+                math.sin(phase) * 0.84 +
+                math.sin(3.0 * phase) * 0.13 +
+                math.sin(2.0 * phase) * 0.03
             )
-            air = (random.random() * 2 - 1) * 0.08 * env
             
-            val = (tone + chiff + air) * env
-            left[i] += val * pl
-            right[i] += val * pr
+            # Soft chiff transient on attack (lowpass pink noise pulse, decays in 70ms)
+            chiff = lp.tick(pn.tick()) * 0.08 * math.exp(-t_note / 0.07)
+            air = lp.tick(pn.tick()) * 0.03
+            
+            dry = (tone + chiff + air) * env
+            rev_l, rev_r = rb.process(dry * 0.45 * pl, dry * 0.45 * pr)
+            
+            left[i] += (dry * pl * 0.68 + rev_l * 0.32)
+            right[i] += (dry * pr * 0.68 + rev_r * 0.32)
             
     return apply_seamless_loop(left, right)
 
