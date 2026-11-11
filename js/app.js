@@ -51,6 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Tải trước ngầm các file âm thanh vào cache để khi bấm là phát ngay
+  setTimeout(() => {
+    if (engine && typeof engine.preloadAllSamples === 'function') {
+      engine.preloadAllSamples();
+    }
+  }, 200);
+
   // ==========================================
   // 1. RENDER CATEGORIES & SOUND CARDS
   // ==========================================

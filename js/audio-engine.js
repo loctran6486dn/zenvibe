@@ -12,7 +12,10 @@ class ZenAudioEngine {
     this.isMuted = false;
     this.masterVolume = 0.8;
     this.channels = new Map(); // id -> { isPlaying, volume, gainNode, stopFn, soundItem }
-    this.audioElements = new Map(); // id -> HTMLAudioElement cho các bản thu âm tự nhiên
+    this.audioBuffers = new Map(); // id -> AudioBuffer (decoded Web Audio API in RAM)
+    this.bufferSources = new Map(); // id -> AudioBufferSourceNode
+    this.loadingPromises = new Map(); // id -> Promise<AudioBuffer>
+    this.audioElements = new Map(); // id -> HTMLAudioElement (secondary fallback)
     this.noiseBuffers = {}; // cache noise buffers
   }
 
@@ -29,11 +32,62 @@ class ZenAudioEngine {
 
       // Chuẩn bị buffer nhiễu nền
       this._generateNoiseBuffers();
+
+      // Tự động tải trước toàn bộ âm thanh ngầm vào RAM
+      this.preloadAllSamples();
     }
 
     if (this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();
     }
+  }
+
+  // Tải và giải mã file âm thanh trực tiếp vào Web Audio Buffer
+  async loadAudioBuffer(soundId, url, fallbackUrl = null) {
+    if (this.audioBuffers.has(soundId)) {
+      return this.audioBuffers.get(soundId);
+    }
+    if (this.loadingPromises.has(soundId)) {
+      return this.loadingPromises.get(soundId);
+    }
+
+    const loadPromise = (async () => {
+      try {
+        let resp = await fetch(url);
+        if (!resp.ok && fallbackUrl) {
+          resp = await fetch(fallbackUrl);
+        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const arrayBuffer = await resp.arrayBuffer();
+
+        this.initContext();
+
+        const audioBuffer = await new Promise((resolve, reject) => {
+          this.audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+        });
+
+        this.audioBuffers.set(soundId, audioBuffer);
+        return audioBuffer;
+      } catch (err) {
+        console.warn(`ZenVibe: Không thể giải mã buffer cho ${soundId}:`, err);
+        return null;
+      } finally {
+        this.loadingPromises.delete(soundId);
+      }
+    })();
+
+    this.loadingPromises.set(soundId, loadPromise);
+    return loadPromise;
+  }
+
+  // Tải trước toàn bộ âm thanh ngầm vào bộ nhớ máy để click là phát tức thì
+  preloadAllSamples() {
+    if (typeof SOUND_ITEMS === 'undefined') return;
+    SOUND_ITEMS.forEach(sound => {
+      if (sound.type === 'audio_sample' && sound.audioSrc && !this.audioBuffers.has(sound.id)) {
+        this.loadAudioBuffer(sound.id, sound.audioSrc, sound.audioSrcFallback);
+      }
+    });
   }
 
   // Tạo các bộ đệm nhiễu chuẩn (White, Pink, Brown)
@@ -119,53 +173,104 @@ class ZenAudioEngine {
     const channel = this.getChannel(soundId);
     if (channel.isPlaying) return;
 
+    channel.isPlaying = true;
+
+    // Track Gain Node (độc lập volume từng kênh - hoạt động 100% trên iPhone/iPad/Android)
+    const trackGain = this.audioCtx.createGain();
+    const targetGain = channel.volume / 100;
+    trackGain.gain.setValueAtTime(0.001, this.audioCtx.currentTime);
+    trackGain.gain.exponentialRampToValueAtTime(Math.max(0.001, targetGain), this.audioCtx.currentTime + 0.2);
+    trackGain.connect(this.masterGain);
+    channel.gainNode = trackGain;
+
     const soundItem = channel.soundItem;
 
     // 1. Nếu là âm thanh sử dụng bản thu âm tự nhiên (audio_sample)
     if (soundItem && soundItem.type === 'audio_sample' && soundItem.audioSrc) {
-      let audio = this.audioElements.get(soundId);
-      if (!audio) {
-        audio = new Audio();
-        audio.loop = true;
-        audio.preload = 'auto';
+      const playWithBuffer = (buffer) => {
+        if (!channel.isPlaying) return; // Đã bị tắt trong lúc tải
 
-        // Gán nguồn âm thanh với fallback
-        audio.src = soundItem.audioSrc;
-        audio.onerror = () => {
-          if (soundItem.audioSrcFallback && audio.src !== soundItem.audioSrcFallback) {
-            audio.src = soundItem.audioSrcFallback;
-            audio.play().catch(e => console.warn('Sample fallback error:', e));
-          }
+        if (this.bufferSources.has(soundId)) {
+          try { this.bufferSources.get(soundId).stop(); } catch (e) {}
+        }
+
+        const source = this.audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true; // HARDWARE SAMPLE-ACCURATE GAPLESS LOOP 100% VĨNH VIỄN
+        source.connect(trackGain);
+        source.start(0);
+        this.bufferSources.set(soundId, source);
+
+        channel.stopFn = () => {
+          try {
+            source.stop(this.audioCtx.currentTime + 0.2);
+          } catch (e) {}
+          this.bufferSources.delete(soundId);
         };
-        this.audioElements.set(soundId, audio);
-      }
+      };
 
-      channel.isPlaying = true;
-      const targetGain = (channel.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
-      audio.volume = Math.max(0, Math.min(1, targetGain));
-      
-      const playPromise = audio.play();
-      if (playPromise) {
-        playPromise.catch(e => {
-          console.warn('Audio element play exception:', e);
+      if (this.audioBuffers.has(soundId)) {
+        playWithBuffer(this.audioBuffers.get(soundId));
+      } else {
+        this.loadAudioBuffer(soundId, soundItem.audioSrc, soundItem.audioSrcFallback).then(buffer => {
+          if (buffer) {
+            playWithBuffer(buffer);
+          } else {
+            this._startAudioElementFallback(soundId, channel, trackGain);
+          }
         });
       }
       return;
     }
 
     // 2. Ngược lại, tạo theo Web Audio API tổng hợp
-    const trackGain = this.audioCtx.createGain();
-    const targetGain = (channel.volume / 100);
-    // Smooth fade in
-    trackGain.gain.setValueAtTime(0.001, this.audioCtx.currentTime);
-    trackGain.gain.exponentialRampToValueAtTime(Math.max(0.001, targetGain), this.audioCtx.currentTime + 0.3);
-    trackGain.connect(this.masterGain);
-
-    channel.gainNode = trackGain;
-
     const synthType = channel.soundItem ? channel.soundItem.synthType : soundId;
     channel.stopFn = this._createSynthesizer(synthType, trackGain);
-    channel.isPlaying = true;
+  }
+
+  // Phương án dự phòng qua HTMLAudioElement nếu decode buffer thất bại
+  _startAudioElementFallback(soundId, channel, trackGain) {
+    const soundItem = channel.soundItem;
+    if (!soundItem) return;
+
+    let audio = this.audioElements.get(soundId);
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.style.display = 'none';
+      audio.preload = 'auto';
+      audio.loop = true;
+      audio.playsInline = true;
+      audio.setAttribute('playsinline', '');
+      audio.setAttribute('webkit-playsinline', '');
+      audio.src = soundItem.audioSrc;
+      document.body.appendChild(audio);
+
+      // Bắt buộc lặp lại bằng code phòng trường hợp thuộc tính loop bị lỗi trên iOS Safari
+      audio.addEventListener('ended', () => {
+        if (channel.isPlaying) {
+          audio.currentTime = 0;
+          audio.play().catch(() => {});
+        }
+      });
+      audio.addEventListener('timeupdate', () => {
+        if (channel.isPlaying && audio.duration && audio.currentTime >= audio.duration - 0.25) {
+          audio.currentTime = 0;
+        }
+      });
+      this.audioElements.set(soundId, audio);
+    }
+
+    const eff = (channel.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
+    try { audio.volume = Math.max(0, Math.min(1, eff)); } catch (e) {}
+
+    const playPromise = audio.play();
+    if (playPromise) {
+      playPromise.catch(e => {
+        console.warn('Fallback play exception:', e);
+        const synthType = soundItem.synthType || soundId;
+        channel.stopFn = this._createSynthesizer(synthType, trackGain);
+      });
+    }
   }
 
   // Dừng phát một âm thanh
@@ -173,28 +278,29 @@ class ZenAudioEngine {
     const channel = this.channels.get(soundId);
     if (!channel || !channel.isPlaying) return;
 
-    // Nếu là audio sample element
+    channel.isPlaying = false;
+
+    // Dừng AudioBufferSourceNode
+    if (this.bufferSources.has(soundId)) {
+      const source = this.bufferSources.get(soundId);
+      try {
+        source.stop(this.audioCtx.currentTime + fadeDuration);
+      } catch (e) {}
+      this.bufferSources.delete(soundId);
+    }
+
+    // Dừng Audio Element fallback nếu có
     if (this.audioElements.has(soundId)) {
       const audio = this.audioElements.get(soundId);
       if (audio) {
-        const startVol = audio.volume;
-        const steps = 8;
-        const stepTime = (fadeDuration * 1000) / steps;
-        let curStep = 0;
-        const fadeInterval = setInterval(() => {
-          curStep++;
-          audio.volume = Math.max(0, startVol * (1 - curStep / steps));
-          if (curStep >= steps) {
-            clearInterval(fadeInterval);
-            audio.pause();
-            audio.currentTime = 0;
-          }
-        }, stepTime);
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch (e) {}
       }
-      channel.isPlaying = false;
-      return;
     }
 
+    // Giảm dần Gain và dọn dẹp
     if (channel.gainNode && this.audioCtx) {
       const currentGain = channel.gainNode.gain.value;
       channel.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
@@ -203,11 +309,11 @@ class ZenAudioEngine {
 
       setTimeout(() => {
         if (channel.stopFn) {
-          try { channel.stopFn(); } catch (e) { console.warn(e); }
+          try { channel.stopFn(); } catch (e) {}
           channel.stopFn = null;
         }
         if (channel.gainNode) {
-          channel.gainNode.disconnect();
+          try { channel.gainNode.disconnect(); } catch (e) {}
           channel.gainNode = null;
         }
       }, fadeDuration * 1000 + 50);
@@ -217,29 +323,26 @@ class ZenAudioEngine {
         channel.stopFn = null;
       }
     }
-
-    channel.isPlaying = false;
   }
 
-  // Cập nhật âm lượng riêng cho từng track
+  // Cập nhật âm lượng riêng cho từng track (hoạt động 100% trên iPhone/iPad/Android)
   setChannelVolume(soundId, volume) {
     const channel = this.getChannel(soundId);
     channel.volume = Math.max(0, Math.min(100, volume));
-
-    // Cập nhật nếu là audio element
-    if (this.audioElements.has(soundId)) {
-      const audio = this.audioElements.get(soundId);
-      if (audio && channel.isPlaying) {
-        const eff = (channel.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
-        audio.volume = Math.max(0, Math.min(1, eff));
-      }
-      return;
-    }
 
     if (channel.gainNode && this.audioCtx) {
       const targetGain = channel.volume / 100;
       channel.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
       channel.gainNode.gain.setTargetAtTime(targetGain, this.audioCtx.currentTime, 0.05);
+    }
+
+    // Đồng bộ sang fallback audio element nếu có
+    if (this.audioElements.has(soundId)) {
+      const audio = this.audioElements.get(soundId);
+      if (audio && channel.isPlaying) {
+        const eff = (channel.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
+        try { audio.volume = Math.max(0, Math.min(1, eff)); } catch (e) {}
+      }
     }
   }
 
@@ -251,12 +354,12 @@ class ZenAudioEngine {
       this.masterGain.gain.setTargetAtTime(this.masterVolume, this.audioCtx.currentTime, 0.05);
     }
 
-    // Đồng bộ sang các audio sample elements
+    // Đồng bộ sang các fallback audio elements
     for (const [id, audio] of this.audioElements.entries()) {
       const ch = this.channels.get(id);
       if (ch && ch.isPlaying) {
         const eff = (ch.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
-        audio.volume = Math.max(0, Math.min(1, eff));
+        try { audio.volume = Math.max(0, Math.min(1, eff)); } catch (e) {}
       }
     }
   }
@@ -271,19 +374,19 @@ class ZenAudioEngine {
       this.masterGain.gain.setTargetAtTime(target, this.audioCtx.currentTime, 0.05);
     }
 
-    // Đồng bộ sang các audio sample elements
+    // Đồng bộ sang các fallback audio elements
     for (const [id, audio] of this.audioElements.entries()) {
       const ch = this.channels.get(id);
       if (ch && ch.isPlaying) {
         const eff = (ch.volume / 100) * (this.isMuted ? 0 : this.masterVolume);
-        audio.volume = Math.max(0, Math.min(1, eff));
+        try { audio.volume = Math.max(0, Math.min(1, eff)); } catch (e) {}
       }
     }
     return this.isMuted;
   }
 
   // Tắt tất cả các âm thanh đang phát
-  stopAll(fadeDuration = 0.4) {
+  stopAll(fadeDuration = 0.3) {
     for (const [id, channel] of this.channels.entries()) {
       if (channel.isPlaying) {
         this.stopSound(id, fadeDuration);
@@ -308,7 +411,7 @@ class ZenAudioEngine {
 
   // Fade out toàn bộ âm thanh (cho sleep timer)
   fadeOutMaster(durationSeconds, onComplete) {
-    // Fade out các audio elements
+    // Fade out các audio elements nếu có
     for (const [id, audio] of this.audioElements.entries()) {
       const ch = this.channels.get(id);
       if (ch && ch.isPlaying) {
@@ -318,7 +421,7 @@ class ZenAudioEngine {
         let curStep = 0;
         const fadeInt = setInterval(() => {
           curStep++;
-          audio.volume = Math.max(0, startVol * (1 - curStep / steps));
+          try { audio.volume = Math.max(0, startVol * (1 - curStep / steps)); } catch (e) {}
           if (curStep >= steps) {
             clearInterval(fadeInt);
           }

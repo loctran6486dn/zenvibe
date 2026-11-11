@@ -1,5 +1,5 @@
 // sw.js - ZenVibe Service Worker for Offline PWA Support
-const CACHE_NAME = 'zenvibe-v1';
+const CACHE_NAME = 'zenvibe-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -35,10 +35,27 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Đối với request âm thanh dải byte (Range requests), cho đi thẳng qua mạng
-  if (event.request.headers.get('range') || requestUrl.pathname.includes('/assets/audio/')) {
+  // Đối với request âm thanh
+  if (requestUrl.pathname.includes('/assets/audio/')) {
+    // Nếu có range header (stream), cho qua network
+    if (event.request.headers.get('range')) {
+      event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
+      );
+      return;
+    }
+    // Ngược lại (fetch đầy đủ cho Web Audio API): Cache-first fallback Network & lưu cache
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const respClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, respClone));
+          }
+          return networkResponse;
+        });
+      })
     );
     return;
   }
