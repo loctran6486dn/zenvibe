@@ -11,7 +11,25 @@
 - **Thanh trượt Volume độc lập**: Điều chỉnh độ lớn nhỏ cho từng âm thanh từ 0% đến 100%.
 - **Master Controls**: Nút Tạm dừng / Tiếp tục tất cả tức thì, Thanh âm lượng tổng và Tắt tiếng nhanh (Mute).
 
-### 2. 🌿 Danh Mục Âm Thanh Phong Phú
+### 2. 🌿 Danh Mục Âm Thanh Phong Phú (30+ Nhạc Cụ & Âm Thanh Tự Nhiên)
+- **Chuông & Kim loại ngân (Ambient & Sound Bath)**:
+  - 🥣 *Chuông xoay Tây Tạng (Singing Bowl)*: Sóng rung 432Hz chữa lành, thanh tẩy năng lượng tiêu cực
+  - 🛸 *Trống đĩa Handpan*: Âm hưởng D-Kurd du dương huyền ảo, đưa tâm trí vào cõi an nhiên
+  - 🥁 *Trống lưỡi thép (Tongue Drum)*: Tiếng chuông gõ thanh khiết, định tâm tức thì
+  - 🎐 *Chuông gió Koshi*: Từng giọt âm thanh ngân nga trong gió chiều thanh tịnh
+- **Mộc & Gõ nhẹ (Organic & Warm Percussion)**:
+  - 🎹 *Đàn Kalimba*: Giai điệu phím gỗ mộc mạc, trong trẻo như giọt sương mai
+  - 🪵 *Mõ thiền & Chày gỗ (Temple Woodblock)*: Nhịp gõ định tâm khoan thai nơi cửa thiền
+  - 🎋 *Ống mưa & Hạt gỗ Shaker (Rainstick)*: Hạt khô luồn qua nan tre tí tách như cơn mưa rừng
+- **Dây gảy & Dây rung (Acoustic Strings)**:
+  - 🪕 *Đàn hạc Celtic (Celtic Harp)*: Nốt rải bồng bềnh thanh thoát tựa mây trời
+  - 🎸 *Guitar mộc Fingerstyle*: Tiếng đàn nylon ấm áp, bình yên bên tách trà chiều
+  - 🎼 *Đàn Cổ tranh Guzheng*: Ngũ cung phương Đông thiền vị, thanh lọc tâm trí
+  - 🎻 *Cello trầm ấm*: Vĩ kéo trầm sâu rung cảm lồng ngực, giải tỏa căng cứng
+- **Nhạc cụ hơi (Wind Instruments)**:
+  - 🪈 *Sáo trúc thiền Bansuri*: Tiếng thở sáo trúc thênh thang giữa non ngàn
+  - 🏺 *Sáo đất Ocarina*: Âm thanh đất nung tròn trịa, ngọt ngào như làn gió mát
+  - 🎋 *Sáo sậy Pan Flute*: Giai điệu mộc mạc thảo nguyên, tự do và êm dịu
 - **Thiên nhiên & Cây cỏ**:
   - 🌧️ *Mưa rào êm dịu*
   - 🏠 *Mưa rơi trên mái hiên / Mái tôn*
@@ -29,7 +47,6 @@
   - ☕ *Quán cà phê ấm cúng*
   - ⌨️ *Văn phòng & Bàn phím cơ*
   - 🕰️ *Đồng hồ tích tắc phòng khách*
-  - 🎐 *Chuông gió thiền tịnh*
 - **Khoa học giấc ngủ & Não bộ**:
   - 🟤 *Tiếng ồn nâu (Brown Noise)*: Tần số siêu trầm ru ngủ sâu
   - ⚪ *Tiếng ồn trắng (White Noise)*: Che phủ tiếng ồn xung quanh
